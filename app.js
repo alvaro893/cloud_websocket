@@ -27,12 +27,18 @@ socketCam.on('connection', function connection(ws) {
 });
 
 function verifyClient(info){
-    // TODO: caution with async
-    const acceptHandshake = false
+    var acceptHandshake = false
+    var accepted = "not accepted"
+
     clientUrl = url.parse(info.req.url, true)
     params = clientUrl.query
-    console.log("new client %s, %s", info.origin, params.pass)
+    
     acceptHandshake = params.pass == PASSWORD
+
+    if(acceptHandshake){
+        accepted = "accepted"
+    }
+    console.warn("new client %s: %s", accepted, info.origin)
     return acceptHandshake
 }
 
