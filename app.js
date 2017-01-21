@@ -1,29 +1,40 @@
 const WebSocket = require('ws');
 const url = require('url')
 const PASSWORD = "90011"
+const camDataPath = "/camera"
+const clientDataPath = "/client"
+var camSocket = null
+var clientSocket = null
 
-const socketCam = new WebSocket.Server({
+const wss = new WebSocket.Server({
      port: 8080, verifyClient: verifyClient});
 
 var buffer = "data"
-console.log("running on %s:%d", socketCam.options.host, socketCam.options.port)
+console.log("running on %s:%d", wss.options.host, wss.options.port)
 
-socketCam.on('connection', function connection(ws) {
+wss.on('connection', function connection(ws) {
     var parsedUrl = url.parse(ws.upgradeReq.url)
-    console.log("path:%s, params:%s", parsedUrl.pathname, parsedUrl.query)
-    if(parsedUrl.pathname == '/hi'){
-        console.log('wtf')
+    var path = parsedUrl.pathname
+
+    if(path == camDataPath){
+        camSocket = ws
         var incoming = function incoming(message) {
-            console.log('received from hi: %s', message);
+            console.log('received from cam: %s', message);
+            if (clientSocket != null){
+                clientSocket.send(message)
+            }
         }
-    }else{
+    }else if (path == clientDataPath){
+        clientSocket = ws
         var incoming = function incoming(message) {
-            console.log('received: %s', message);
+            console.log('received from client: %s', message);
+                if (camSocket != null){
+                camSocket.send(message)
+            }
         }
     }
+    
   ws.on('message', incoming);
-
-  ws.send('something');
 });
 
 function verifyClient(info){
@@ -33,7 +44,7 @@ function verifyClient(info){
     clientUrl = url.parse(info.req.url, true)
     params = clientUrl.query
     
-    acceptHandshake = params.pass == PASSWORD
+    acceptHandshake = true//params.pass == PASSWORD
 
     if(acceptHandshake){
         accepted = "accepted"
