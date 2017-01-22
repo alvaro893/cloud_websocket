@@ -1,5 +1,8 @@
 const WebSocket = require('ws');
 const url = require('url')
+var port = process.env.PORT || process.env.port || process.env.OPENSHIFT_NODEJS_PORT || 8080;
+var ip = process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
+
 const PASSWORD = "90011"
 const camDataPath = "/camera"
 const clientDataPath = "/client"
@@ -7,7 +10,7 @@ var camSocket = null
 var clientSocket = null
 
 const wss = new WebSocket.Server({
-     port: 8080, verifyClient: verifyClient});
+     host: ip, port: port, verifyClient: verifyClient});
 
 var buffer = "data"
 console.log("running on %s:%d", wss.options.host, wss.options.port)
