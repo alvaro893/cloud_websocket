@@ -22,9 +22,13 @@ wss.on('connection', function connection(ws) {
     if(path == camDataPath){
         camSocket = ws
         var incoming = function incoming(message) {
-            console.log('received from cam: %s', message);
+            console.log('received from cam: %d', message.length);
             if (clientSocket != null){
+                try{
                 clientSocket.send(message)
+                }catch (e){
+                    console.error(e)
+                }
             }
         }
     }else if (path == clientDataPath){
@@ -32,7 +36,11 @@ wss.on('connection', function connection(ws) {
         var incoming = function incoming(message) {
             console.log('received from client: %s', message);
                 if (camSocket != null){
+                try{
                 camSocket.send(message)
+                }catch (e){
+                    console.error(e)
+                }
             }
         }
     }
