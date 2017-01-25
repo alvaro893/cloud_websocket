@@ -43,8 +43,25 @@ wss.on('connection', function connection(ws) {
                 }
             }
         }
+    }else if(path == "/"){
+        // this is a copy of client path
+        clientSocket = ws
+        var incoming = function incoming(message) {
+            console.log('received from client: %s', message);
+                if (camSocket != null){
+                try{
+                camSocket.send(message)
+                }catch (e){
+                    console.error(e)
+                }
+            }
+        }
+    }else{
+        console.warn("rejected: no valid path");
+        ws.terminate()
+        return
     }
-    
+        
   ws.on('message', incoming);
 });
 
