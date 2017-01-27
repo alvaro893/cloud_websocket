@@ -76,7 +76,7 @@ function verifyClient(info) {
     clientUrl = url.parse(info.req.url, true)
     params = clientUrl.query
 
-    acceptHandshake = params.pass == PASSWORD
+    acceptHandshake = true//params.pass == PASSWORD
 
     if (acceptHandshake) {
         accepted = "accepted"
