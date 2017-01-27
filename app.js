@@ -21,16 +21,19 @@ wss.on('connection', function connection(ws) {
     var parsedUrl = url.parse(ws.upgradeReq.url)
     var path = parsedUrl.pathname
     var incoming = null
+    var closeCallback = null
 
     switch (path) {
         case camDataPath:
             camSocket = ws
             incoming = incomingFromClient;
+            closeCallback = function(code, message){camSocket = null; logClosing(code,message)}
             break;
         case clientDataPath:
         case "/":
             clientSocket = ws
             incoming = incomingFromCamera;
+            closeCallback = function(code, message){clientSocket = null; logClosing(code, message)}
             break;
         default:
             console.warn("rejected: no valid path");
@@ -39,10 +42,12 @@ wss.on('connection', function connection(ws) {
     }
 
     ws.on('message', incoming);
-    ws.on('close', function(code, message) {
-        console.log("client close connection: %d, %s", code, message)
-    })
+    ws.on('close', closeCallback);
 });
+
+function logClosing(code, message){
+    console.log("client close connection: %d, %s", code, message)
+}
 
 function incomingFromCamera(message, flags) {
     if (camSocket != null) {
