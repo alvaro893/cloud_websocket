@@ -9,7 +9,9 @@
     "ws": "^1.1.1"
   },
   "devDependencies": {
-    "nodemon": "*"
+    "chai": "^3.5.0",
+    "nodemon": "*",
+    "sinon": "^1.17.7"
   },
   "engine": {
     "node": "*",
@@ -18,7 +20,7 @@
   "scripts": {
     "dev": "nodemon app.js",
     "start": "node app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha tests"
   },
   "repository": {
     "type": "git",
