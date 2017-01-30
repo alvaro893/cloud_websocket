@@ -1,6 +1,8 @@
 const WebsocketConnections = require('./websocketConnections')
 const WebSocket = require('ws');
 const url = require('url');
+
+console.log("version 1.0")
 var port = process.env.PORT || process.env.port || process.env.OPENSHIFT_NODEJS_PORT || 8080;
 var ip = process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
 
