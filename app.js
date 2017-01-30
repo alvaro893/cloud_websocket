@@ -1,20 +1,23 @@
 const WebsocketConnections = require('./websocketConnections')
 const WebSocket = require('ws');
 const url = require('url');
+const HttpServer = require('./httpServer')
 
 console.log("version 1.0")
 var port = process.env.PORT || process.env.port || process.env.OPENSHIFT_NODEJS_PORT || 8080;
 var ip = process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
 
 const PASSWORD = process.env.WS_PASSWORD
-const camDataPath = "/camera"
+const camDataPath = /\/camera\d*/
 const clientDataPath = "/client"
-var camSocket = null
+var camSocket = new WebsocketConnections.CameraConnections()
 var clientSockets = new WebsocketConnections.ClientConnections()
+var httpServer = new HttpServer(port, camSocket)
 
 const wss = new WebSocket.Server({
     host: ip,
-    port: port,
+    // port: port,
+    server: httpServer.server,
     verifyClient: verifyClient
 });
 
@@ -26,14 +29,15 @@ wss.on('connection', function connection(ws) {
     var incomingCallback = null
     var closeCallback = null
 
-    switch (path) {
-        case camDataPath:
-            camSocket = ws
+    switch (true) {
+        case camDataPath.test(path):
+            var camNumber =  parseInt(path.split('camera')[1])
+            camSocket.add(ws)
             incomingCallback = incomingFromCamera
-            closeCallback = function(code, message){camSocket = null; logClosing(code,message)}
+            closeCallback = function(code, message){camSocket.close(ws); logClosing(code,message)}
             break;
-        case clientDataPath:
-        case "/":
+        case path == clientDataPath:
+        case path == "/":
             clientSockets.add(ws)
             incomingCallback = clientSockets.incomingCallback(camSocket)
             closeCallback = function(code, message){clientSockets.close(ws); logClosing(code, message)}
