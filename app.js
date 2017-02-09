@@ -25,15 +25,16 @@ wss.on('connection', function connection(ws) {
 
     switch (path) {
         case camDataPath:
+            if(camSocket != null) {logClosing(0,"no more cams"); ws.close();return;}
             camSocket = ws
-            incoming = incomingFromClient;
+            incoming = incomingFromCamera;
             closeCallback = function(code, message){camSocket = null; logClosing(code,message)}
             break;
         case clientDataPath:
-        case "/":
+            if(clientSocket != null) {logClosing(0,"no more clients"); ws.close();return;}
             clientSocket = ws
-            incoming = incomingFromCamera;
-            closeCallback = function(code, message){clientSocket = null; logClosing(code, message)}
+            incoming = function(){};
+            closeCallback = function(code, message){clientSocket = null; ws.close(); logClosing(code, message)}
             break;
         default:
             console.warn("rejected: no valid path");
@@ -50,16 +51,6 @@ function logClosing(code, message){
 }
 
 function incomingFromCamera(message, flags) {
-    if (camSocket != null) {
-        try {
-            camSocket.send(message)
-        } catch (e) {
-            console.error(e)
-        }
-    }
-}
-
-function incomingFromClient(message, flags) {
     if (clientSocket != null) {
         try {
             clientSocket.send(message)
@@ -81,6 +72,6 @@ function verifyClient(info) {
     if (acceptHandshake) {
         accepted = "accepted"
     }
-    console.warn("new client %s: %s", accepted, info.origin)
+    console.warn("new connection")
     return acceptHandshake
 }
