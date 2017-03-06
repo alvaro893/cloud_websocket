@@ -76,6 +76,6 @@ function verifyClient(info) {
     if (acceptHandshake) {
         accepted = "accepted"
     }
-    console.warn("new client %s: %s", accepted, info.origin)
+    console.log("new client %s: %s", accepted, info.req.url)
     return acceptHandshake
 }

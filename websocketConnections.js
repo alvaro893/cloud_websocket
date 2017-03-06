@@ -1,3 +1,7 @@
+/**
+ * There are 2 classes here ClientConnections and CameraConnections
+ * which are ment to hold the connections for either clients and cameras
+ */
 /**@constructor */
 function ClientConnections() {
     this.clients = []
@@ -47,7 +51,7 @@ CameraConnections.prototype.add = function(conn) {
 
 CameraConnections.prototype.close = function(conn){
     var indx = this.cameras.indexOf(conn)
-    this.clients.splice(indx, 1)
+    this.cameras.splice(indx, 1)
 }
 
 CameraConnections.prototype.getCamera = function(index) {

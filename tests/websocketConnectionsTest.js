@@ -43,3 +43,43 @@ describe('websocketConnections', function test0(){
         connections.sendToAll(message)
     })
 })
+
+describe('websocketConnections-cameras', function test0(){
+    it('cameras must be zero at the begining', function(){
+        var connections = new WebsocketConnections.CameraConnections()
+        expect(connections.cameras.length).to.equal(0)
+    })
+
+    it('add two cameras to array', function test1(){
+        var connections = new WebsocketConnections.CameraConnections()
+        connections.add('1'); connections.add('2')
+        expect(connections.cameras.length).to.equal(2)
+    })
+
+    it('close connections camera connection', function test2(){
+        var connections = new WebsocketConnections.CameraConnections()
+        connections.add('1'); connections.add('2')
+        expect(connections.cameras.length).to.equal(2)
+        connections.close('1')
+        expect(connections.cameras.length).to.equal(1)
+    })
+
+//    it('create an incomming callback for connection', function test3(){
+//        var message = "hello"
+//        var connections = new WebsocketConnections.CameraConnections()
+//        var fakeClient = {send: function send(msg){expect(msg).to.equal(message)}}
+//
+//        connections.add(fakeClient);
+//        connections.incomingCallback(fakeClient)(message, null)
+//    })
+    // it('send to all ', function test3(){
+    //     var message = "hello"
+    //     var connections = new WebsocketConnections.CameraConnections()
+    //     var fakeClient = {send: function send(msg){expect(msg).to.equal(message)}} // this mocks the 'send' method
+
+    //     connections.add(fakeClient);
+    //     connections.add(fakeClient);
+    //     connections.add(fakeClient);
+    //     connections.sendToAll(message)
+    // })
+})

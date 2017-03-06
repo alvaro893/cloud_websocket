@@ -20,7 +20,9 @@
   "scripts": {
     "dev": "nodemon app.js",
     "start": "node app.js",
-    "test": "mocha tests"
+    "test": "mocha tests",
+    "robot": "./run_robot_tests.sh"
+
   },
   "repository": {
     "type": "git",
