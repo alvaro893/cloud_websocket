@@ -1,16 +1,16 @@
-const WebsocketConnections = require('./websocketConnections')
+"use strict";
+const WebsocketConnections = require('./websocketConnections');
 const WebSocket = require('ws');
 const url = require('url');
 
-console.log("version 1.0")
+console.log("version 1.0");
 var port = process.env.PORT || process.env.port || process.env.OPENSHIFT_NODEJS_PORT || 8080;
 var ip = process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
 
-const PASSWORD = process.env.WS_PASSWORD
-const camDataPath = "/camera"
-const clientDataPath = "/client"
-var camSocket = null
-var clientSockets = new WebsocketConnections.ClientConnections()
+const PASSWORD = process.env.WS_PASSWORD;
+const camDataPath = "/camera";
+const clientDataPath = "/client";
+var camConnections = WebsocketConnections.CameraConnections();
 
 const wss = new WebSocket.Server({
     host: ip,
@@ -18,64 +18,41 @@ const wss = new WebSocket.Server({
     verifyClient: verifyClient
 });
 
-console.log("running on %s:%d", wss.options.host, wss.options.port)
+console.log("running on %s:%d", wss.options.host, wss.options.port);
 
 wss.on('connection', function connection(ws) {
-    var parsedUrl = url.parse(ws.upgradeReq.url)
-    var path = parsedUrl.pathname
-    var incomingCallback = null
-    var closeCallback = null
+    var parsedUrl = url.parse(ws.upgradeReq.url);
+    var path = parsedUrl.pathname;
 
     switch (path) {
-        case camDataPath:
-            camSocket = ws
-            incomingCallback = incomingFromCamera
-            closeCallback = function(code, message){camSocket = null; logClosing(code,message)}
+        case camDataPath:  // a camera wants to register
+            camConnections.add(ws); // a name can be provide as well;
             break;
-        case clientDataPath:
+        case clientDataPath:  // a client wants to register to a camera
         case "/":
-            clientSockets.add(ws)
-            incomingCallback = clientSockets.incomingCallback(camSocket)
-            closeCallback = function(code, message){clientSockets.close(ws); logClosing(code, message)}
+            var name = "camera0"; // TODO: get name from request;
+            camConnections.addClientToCamera(name, ws);
             break;
         default:
-            console.warn("rejected: no valid path");
-            ws.terminate()
-            return
+            console.log("rejected: no valid path");
+            ws.terminate();
+            return;
     }
-
-    ws.on('message', incomingCallback);
-    ws.on('close', closeCallback);
 });
-
-function logClosing(code, message){
-    console.log("client close connection: %d, %s", code, message)
-}
-
-function incomingFromCamera(message, flags) {
-    if (camSocket != null) {
-        try {
-            clientSockets.sendToAll(message)
-        } catch (e) {
-            console.error(e)
-        }
-    }
-}
-
 
 
 function verifyClient(info) {
-    var acceptHandshake = false
-    var accepted = "rejected: no valid password, use 'pass' parameter in the handshake please"
+    var acceptHandshake = false;
+    var accepted = "rejected: no valid password, use 'pass' parameter in the handshake please";
 
-    clientUrl = url.parse(info.req.url, true)
-    params = clientUrl.query
+    var clientUrl = url.parse(info.req.url, true);
+    var params = clientUrl.query;
 
-    acceptHandshake = true//params.pass == PASSWORD
+    acceptHandshake = params.pass == PASSWORD;
 
     if (acceptHandshake) {
-        accepted = "accepted"
+        accepted = "accepted";
     }
-    console.log("new client %s: %s", accepted, info.req.url)
-    return acceptHandshake
+    console.log("new client %s: %s", accepted, info.req.url);
+    return acceptHandshake;
 }

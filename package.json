@@ -22,7 +22,6 @@
     "start": "node app.js",
     "test": "mocha tests",
     "robot": "./run_robot_tests.sh"
-
   },
   "repository": {
     "type": "git",
