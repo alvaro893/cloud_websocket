@@ -1,3 +1,4 @@
+
 /*
  * There are 2 classes here ClientConnections and CameraConnections
  * which are meant to hold the connections for either clients and cameras
@@ -59,6 +60,7 @@ function CameraConnections() {
 
 CameraConnections.prototype.add = function (conn, name) {
     var cname = name;
+    var self = this;
     if (name === undefined) {
         cname = "camera" + this.cameras.length;
     }
@@ -73,7 +75,7 @@ CameraConnections.prototype.add = function (conn, name) {
     function closingCamera(code, message) {
         camera.conn.close();
         camera.clients.closeAll();
-        this.prototype.removeCameraClient(camera);
+        self.removeCamera(camera);
         console.log("Camera %s closing connection: %d, %s", camera.name, code, message);
     }
 
@@ -86,14 +88,23 @@ CameraConnections.prototype.add = function (conn, name) {
     }
     return camera;
 };
-
+/**
+ * @method
+ * @param {(string|object|function)} cameraName
+ * @param {WebSocket} clientConn
+ */
 CameraConnections.prototype.addClientToCamera = function (cameraName, clientConn) {
     var camera;
-    if(typeof cameraName == 'string'){
+    if(typeof cameraName === 'string'){
         camera = this.getCamera(cameraName);
     }else{
         camera = cameraName;
     }
+    if(!camera){
+        console.error("cannot add client to invalid camera: %s", camera);
+        return;
+    }
+
     // new client Callbacks
     clientConn.on('message', incomingFromClient);
     clientConn.on('close', closingClient);
@@ -126,7 +137,7 @@ CameraConnections.prototype.getCamera = function (name) {
             return camera;
         }
     }
-    console.error("no such camera");
+    console.error("no such camera: %s, there are %d cameras available", name, this.cameras.length);
     return false;
 };
 

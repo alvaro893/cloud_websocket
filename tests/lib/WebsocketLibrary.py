@@ -54,7 +54,7 @@ class WebsocketLibrary:
         raise AssertionError("'%s' does not exist" % name)
 
 
-    def send_to_socket(self, socket, message):
+    def send_from_socket(self, socket, message):
         s = self._get_socket(socket)
         s.send_to_socket(message)
         logger.info("%s is sending '%s' message" % (s.name, message) )
@@ -128,7 +128,8 @@ class WebsocketLibrary:
             def run(*args):
                 while self.open_connection:
                     # ws.send(self.queue.get(), opcode=websocket.ABNF.OPCODE_BINARY)
-                    ws.send(self.out_queue.get())
+                    data = str(self.out_queue.get())
+                    ws.send(data)
 
             thread.start_new_thread(run, ())
 

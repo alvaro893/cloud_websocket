@@ -95,6 +95,7 @@ describe('websocketConnections-cameras', function test0() {
             var message = "hello from cam " + i;
             var fakeWsCam = makeFakeWsclient(message);
             var cam = connections.add(fakeWsCam, undefined);
+            console.log("created camera:" + cam.name)
             
             // create the clients
             for(var j = 0; j < nclients; j++){
@@ -114,24 +115,4 @@ describe('websocketConnections-cameras', function test0() {
         obj.send = function send(msg) {expect(msg).to.equal(message);console.log("message="+msg)};
         return obj;
     }
-
-
-        //    it('create an incomming callback for connection', function test3(){
-        //        var message = "hello"
-        //        var connections = new WebsocketConnections.CameraConnections()
-        //        var fakeClient = {send: function send(msg){expect(msg).to.equal(message)}}
-        //
-        //        connections.add(fakeClient);
-        //        connections.incomingCallback(fakeClient)(message, null)
-        //    })
-        // it('send to all ', function test3(){
-        //     var message = "hello"
-        //     var connections = new WebsocketConnections.CameraConnections()
-        //     var fakeClient = {send: function send(msg){expect(msg).to.equal(message)}} // this mocks the 'send' method
-
-        //     connections.add(fakeClient);
-        //     connections.add(fakeClient);
-        //     connections.add(fakeClient);
-        //     connections.sendToAll(message)
-        // })
     });
