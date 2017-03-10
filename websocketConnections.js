@@ -58,6 +58,26 @@ function CameraConnections() {
     this.cameras = [];
 }
 
+/**
+ * @method
+ * @return {number} - number of cameras in the connected
+ */
+CameraConnections.prototype.count = function() {
+    return this.cameras.length;
+};
+
+/**
+ * @method
+ * @return {array} - array of names of the cameras
+ */
+CameraConnections.prototype.getNames = function() {
+    var arrayOfNames = [];
+    this.cameras.forEach(function(element) {
+        arrayOfNames.push(element.name);
+    }, this);
+    return arrayOfNames;
+};
+
 CameraConnections.prototype.add = function (conn, name) {
     var cname = name;
     var self = this;

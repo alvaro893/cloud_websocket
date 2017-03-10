@@ -2,6 +2,7 @@
 const WebsocketConnections = require('./websocketConnections');
 const WebSocket = require('ws');
 const url = require('url');
+const httpServer = require('./httpServer');
 var params;
 
 console.log("version 1.0");
@@ -13,13 +14,16 @@ const camDataPath = "/camera";
 const clientDataPath = "/client";
 var camConnections = new WebsocketConnections.CameraConnections();
 
+/** http server: base */
+const httpserver = new httpServer(port, ip, camConnections);
+
+/** ws server: extends the http server */
 const wss = new WebSocket.Server({
-    host: ip,
-    port: port,
-    verifyClient: verifyClient
+    verifyClient: verifyClient,
+    server: httpserver.server
 });
 
-console.log("running on %s:%d", wss.options.host, wss.options.port);
+console.log("running on %s:%d", ip, port);
 
 wss.on('connection', function connection(ws) {
     var parsedUrl = url.parse(ws.upgradeReq.url);
@@ -34,13 +38,6 @@ wss.on('connection', function connection(ws) {
         case "/":
             var camera_name = params.camera_name || "camera0";
             camConnections.addClientToCamera(camera_name, ws);
-            // if(camConnections.getCamera(camera_name)){
-            //     camConnections.addClientToCamera(camera_name, ws);
-            // }else{
-            //     console.log("camera not found. there are %d cameras available:%s",
-            //      camConnections.cameras.length, camConnections.cameras);
-            //     ws.terminate();
-            // }
             break;
         default:
             console.log("rejected: no valid path");
