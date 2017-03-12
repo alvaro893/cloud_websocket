@@ -97,17 +97,30 @@ Create camera, client, send and receive
 
 
 
-Recive commands from clients to one camera
-    Create Camera Socket        secondaryCamera
-    Create Camera Socket        mainCamera
-    Create Camera Socket        aCamera
-    Create Client Socket        client      mainCamera
+several cameras with several clients, bidirectional communication
+    Create Camera Socket        cam
+    Create Camera Socket        camf
+    Create Client Socket        client       cam
+    Create Client Socket        client1      cam
+    Create Client Socket        client2      camf
+    Create Client Socket        client3      camf
 
-    ${command}   Random Message
-    ${frame}     Random Message
+    Send Random Message From             cam
+    Send Random Message From             camf
 
-    Send From Socket              mainCamera    ${frame}
-    Wait To Receive Message       client        ${frame}
+    sleep                                100 ms
 
-    Send From Socket              client        ${command}
-    Wait To Receive Message       mainCamera    ${command}
+    messages In Queue Should Be          client    1
+    messages In Queue Should Be          client1   1
+    messages In Queue Should Be          client2   1
+    messages In Queue Should Be          client3   1
+
+    Send Random Message From             client
+    Send Random Message From             client1
+    Send Random Message From             client2
+    Send Random Message From             client3
+
+    sleep                                100 ms
+
+    messages In Queue Should Be          cam       2
+    messages In Queue Should Be          camf      2
