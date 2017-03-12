@@ -69,18 +69,10 @@ class WebsocketLibrary:
         if not ws:
             raise AssertionError("there is no websocket")
         if not received_message == expected:
-            raise AssertionError("Messages does not match:'%s' is not '%s'" % (received_message, expected))
+            msg = "Messages do not match:'%s' is not '%s'" % (received_message, expected)
+            logger.warn(msg)
+            raise AssertionError(msg)
 
-    def status_should_be(self, expected_status):
-        if expected_status != self._status:
-            raise AssertionError("Expected status to be '%s' but was '%s'."
-                                 % (expected_status, self._status))
-
-    def _run_command(self, command, *args):
-        command = [sys.executable, self._sut_path, command] + list(args)
-        process = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT)
-        self._status = process.communicate()[0].strip()
 
     class WebSocketConnection(Thread):
         def __init__(self, url, name):
@@ -88,7 +80,6 @@ class WebsocketLibrary:
             # websocket.enableTrace(True)
             self.url = url
             self.name = name
-            self.open_connection = True
             self.in_queue = Queue(10)
             self.ws = websocket.WebSocketApp(self.url,
                                              on_message=self.on_message,
@@ -115,14 +106,13 @@ class WebsocketLibrary:
             logger.info("opened %s" % self.name)
 
         def stop(self):
-            self.open_connection = False
             self.ws.close()
 
         def send_to_socket(self, data):
             self.ws.send(data)
 
-        def receive_next_message(self, timeout=1):
-            return self.in_queue.get(timeout=timeout)
+        def receive_next_message(self):
+            return self.in_queue.get(block=False)
 
 
 

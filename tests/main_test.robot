@@ -32,7 +32,7 @@ Run Cloud
 #    ${result} =                 Wait For Process         timeout=1s  on_timeout=kill
 Wait To Receive Message
     [arguments]   ${socket}  ${message}
-    Wait Until Keyword Succeeds  5x  50 ms  Receive Next Message   ${socket}  ${message}
+    Wait Until Keyword Succeeds  5x  100 ms  Receive Next Message   ${socket}  ${message}
 Create Camera Socket
     [arguments]   ${name}
     create socket  ${name}  ${uri_camera}${name}
@@ -63,13 +63,12 @@ Create camera client and send
 Create camera, client, send and receive
     Create Camera Socket         camera0
     Create Client Socket         client0  camera0
-    send From Socket             camera0  hi
-    send From Socket             client0  hello
+    send From Socket             camera0  hi client
+    send From Socket             client0  hello camera
 
-    Wait To Receive Message      camera0  hello
-    Wait To Receive Message      client0  hi
-#    Receive Next Message         camera0  hello
-#    Receive Next Message         client0  hi
+    Wait To Receive Message      camera0  hello camera
+    Wait To Receive Message      client0  hi client
+
 
 
 
