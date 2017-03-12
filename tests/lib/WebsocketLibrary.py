@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import subprocess
 import sys
-from Queue import Queue
+from Queue import Queue, Empty
 from threading import Thread
 import websocket
 from robot.api import logger
@@ -65,13 +65,25 @@ class WebsocketLibrary:
 
     def receive_next_message(self, name, expected):
         ws = self._get_socket(name)
-        received_message = ws.receive_next_message()
+        try:
+            received_message = ws.receive_next_message()
+        except Empty as e:
+            msg = e.message+"Message is not in Queue yet"
+            logger.warn(msg)
+            raise AssertionError(msg)
         if not ws:
             raise AssertionError("there is no websocket")
         if not received_message == expected:
             msg = "Messages do not match:'%s' is not '%s'" % (received_message, expected)
             logger.warn(msg)
             raise AssertionError(msg)
+
+    def messages_in_queue_should_be(self, name, n):
+        expected = int(n)
+        s = self._get_socket(name)
+        actual = s.in_queue.qsize()
+        if actual != expected:
+            raise AssertionError("number of elements does not match, was %d, expected %d" % (actual, expected))
 
 
     class WebSocketConnection(Thread):

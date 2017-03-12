@@ -32,7 +32,7 @@ Run Cloud
 #    ${result} =                 Wait For Process         timeout=1s  on_timeout=kill
 Wait To Receive Message
     [arguments]   ${socket}  ${message}
-    Wait Until Keyword Succeeds  5x  100 ms  Receive Next Message   ${socket}  ${message}
+    Wait Until Keyword Succeeds  5x  300 ms  Receive Next Message   ${socket}  ${message}
 Create Camera Socket
     [arguments]   ${name}
     create socket  ${name}  ${uri_camera}${name}
@@ -42,14 +42,12 @@ Create Client Socket
 Random Message
     ${randint}  Evaluate   str(random.randint(0, sys.maxint))   modules=random, sys
     [Return]   ${randint}
+Send Random Message From
+    [arguments]  ${socket}
+    ${message}   Random Message
+    Send From Socket  ${socket}  ${message}
 
 *** Test Cases ***
-#Check node.js instance is working
-#    Run Cloud
-#    ${result} =                 Wait For Process         timeout=1s  on_timeout=kill
-#    Process should Be Stopped
-#    Should Contain              ${result.stdout}  running
-
 Check Socket Library works
     Create Socket                client0  ${uri_camera}
     Do Exist Socket             client0
@@ -66,61 +64,50 @@ Create camera, client, send and receive
     send From Socket             camera0  hi client
     send From Socket             client0  hello camera
 
-    Wait To Receive Message      camera0  hello camera
     Wait To Receive Message      client0  hi client
+    Wait To Receive Message      camera0  hello camera
+
+1 camera, several clients
+    Create Camera Socket         camera0
+    Create Client Socket         client0  camera0
+    Create Client Socket         client1  camera0
+    Create Client Socket         client2  camera0
+    send From Socket             camera0  hi clients
+    send From Socket             client0  hello camera
+
+    Wait To Receive Message      camera0  hello camera
+    Wait To Receive Message      client0  hi clients
+    Wait To Receive Message      client1  hi clients
+    Wait To Receive Message      client2  hi clients
+
+5 cameras, 1 client, 5 messages
+    create Camera Socket         camera0
+    create Camera Socket         camera1
+    create Camera Socket         camera-special
+    create Camera Socket         camera3
+    create Camera Socket         camera4
+    Create Client Socket         client          camera-special
+    Send Random Message From             camera-special
+    Send Random Message From             camera-special
+    Send Random Message From             camera-special
+    Send Random Message From             camera-special
+    Send Random Message From             camera-special
+    sleep                                100 ms
+    messages In Queue Should Be          client   5
 
 
 
+Recive commands from clients to one camera
+    Create Camera Socket        secondaryCamera
+    Create Camera Socket        mainCamera
+    Create Camera Socket        aCamera
+    Create Client Socket        client      mainCamera
 
-#Camera to Client with name
-#    Create Camera Socket                cameraname
-#    Create Client Socket                client     cameraname
-#
-#    send From Socket                      cameraname  hello_handsome
-#    Wait To Receive Message             hello_handsome  client
+    ${command}   Random Message
+    ${frame}     Random Message
 
-#Camera to several clients with name
-#    Create Socket                ${uri_camera}camera0829
-#    Create Socket         client0  ${uri_client}camera0829
-#    Create Socket         client1  ${uri_client}camera0829
-#    Create Socket         client2  ${uri_client}camera0829
-#
-#    ${message}  Set Variable        hello to all
-#    sleep  500ms
-#    send From Socket               camera0829  ${message}
-#    sleep  500ms
-#    Wait To Receive Message      ${message}  client0
-#    Wait To Receive Message      ${message}  client1
-#    Wait To Receive Message      ${message}  client2
-#
-#Camera to several clients with Random messages
-#    Create Camera Socket         camera0829
-#    Create Client Socket         client0  camera0829
-#    Create Client Socket         client1  camera0829
-#    Create Client Socket         client2  camera0829
-#
-#    ${message}   Random Message
-#    send From Socket               camera0829  ${message}
-#    Wait To Receive Message      ${message}  client0
-#    Wait To Receive Message      ${message}  client1
-#    Wait To Receive Message      ${message}  client2
-#    ${message}   Random Message
-#    send From Socket               camera0829  ${message}
-#    Wait To Receive Message      ${message}  client0
-#    Wait To Receive Message      ${message}  client1
-#    Wait To Receive Message      ${message}  client2
-#
-#Recive commands from clients to one camera
-#    Create Camera Socket        secondaryCamera
-#    Create Camera Socket        mainCamera
-#    Create Camera Socket        aCamera
-#    Create Client Socket        client      mainCamera
-#
-#    ${command}   Random Message
-#    ${frame}     Random Message
-#
-#    Send From Socket              mainCamera    ${frame}
-#    Wait To Receive Message     ${frame}    client
-#
-#    Send From Socket              client        ${command}
-#    Wait To Receive Message     ${command}    mainCamera
+    Send From Socket              mainCamera    ${frame}
+    Wait To Receive Message       client        ${frame}
+
+    Send From Socket              client        ${command}
+    Wait To Receive Message       mainCamera    ${command}
