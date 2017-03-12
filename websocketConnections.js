@@ -1,10 +1,4 @@
 
-/*
- * There are 2 classes here ClientConnections and CameraConnections
- * which are meant to hold the connections for either clients and cameras
- */
-
-
  /** A class that hold WebSocket clients for a camera
  * @class
  */
@@ -54,7 +48,7 @@ ClientConnections.prototype.closeAll = function (message) {
  * @class
  */
 function CameraConnections() {
-    // this an array of clientcameras, no ws connections
+    /** @member {Array} - this an array of clientcameras, no websockets connections */
     this.cameras = [];
 }
 
@@ -110,34 +104,39 @@ CameraConnections.prototype.add = function (conn, name) {
 };
 /**
  * @method
- * @param {(string|object|function)} cameraName
+ * @param {(string|object|function)} cameraName - can be the name of the camera or a Camera object
  * @param {WebSocket} clientConn
+ * @param {} callback
  */
-CameraConnections.prototype.addClientToCamera = function (cameraName, clientConn) {
-    var camera;
+CameraConnections.prototype.addClientToCamera = function (cameraName, clientConn, callback) {
     if(typeof cameraName === 'string'){
-        camera = this.getCamera(cameraName);
+        this.getCamera(cameraName, tryAddClientToCamera);
     }else{
-        camera = cameraName;
-    }
-    if(!camera){
-        console.error("cannot add client to invalid camera: %s", camera);
-        return;
+        tryAddClientToCamera(cameraName);
     }
 
-    // new client Callbacks
-    clientConn.on('message', incomingFromClient);
-    clientConn.on('close', closingClient);
+    function tryAddClientToCamera(camera){
+        if(!camera){
+            var err = new Error("cannot add client to invalid camera: "+camera);
+            callback(err);
+            return;
+        }
 
-    function incomingFromClient(message, flags) {
-        camera.sendMessage(message);
+        // new client Callbacks
+        clientConn.on('message', incomingFromClient);
+        clientConn.on('close', closingClient);
+        camera.clients.add(clientConn);
+        callback();
+
+        function incomingFromClient(message, flags) {
+            camera.sendMessage(message);
+        }
+
+        function closingClient(code, message) {
+            console.log("Client closing connection for: %s camera. info: %d, %s", camera.name, code, message);
+        }
+
     }
-
-    function closingClient(code, message) {
-        console.log("Client closing connection for: %s camera. info: %d, %s", camera.name, code, message);
-    }
-
-    camera.clients.add(clientConn);
 };
 
 CameraConnections.prototype.removeCamera = function(cameraClient){
@@ -149,16 +148,20 @@ CameraConnections.prototype.close = function(camera){
     // this will trigger closingCamera callback
     this.removeCamera(camera);
 };
-
-CameraConnections.prototype.getCamera = function (name) {
-    for (var i = 0; i < this.cameras.length; i++) {
-        var camera = this.cameras[i];
-        if (camera.name == name) {
-            return camera;
+/**
+ * @method
+ * @param {string} name - name of the camera
+ * @param {} callback - callback which receives the camera object
+ */
+CameraConnections.prototype.getCamera = function (name, callback) {
+    var cameraFound;
+    this.cameras.forEach(function(c) {
+        if (c.name == name) {
+            cameraFound = c;
         }
-    }
-    console.error("no such camera: %s, there are %d cameras available", name, this.cameras.length);
-    return false;
+    }, this);
+
+    callback(cameraFound);
 };
 
 

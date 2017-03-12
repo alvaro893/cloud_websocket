@@ -16,10 +16,13 @@ Library           lib/WebsocketLibrary.py
 Library           OperatingSystem
 Library           Process
 Suite Setup       Run Cloud
-Suite Teardown    Terminate All Processes    kill=True
+Suite Teardown    Close Cloud
 
 *** Keywords ***
+Close cloud
+    Terminate All Processes
 Run Cloud
+    Remove Files                ${outf}  ${errf}
     Set Environment Variable    WS_PASSWORD  30022
     Start Process               ${cloud_app}   alias=cloud_process  stdout=${outf}  stderr=${errf}  shell=True
     sleep   1
@@ -28,7 +31,7 @@ Run Cloud
 #    ${result} =                 Wait For Process         timeout=1s  on_timeout=kill
 Wait To Receive Message
     [arguments]   ${message}  ${socket}
-    ${received}   Wait Until Keyword Succeeds  20x  20 ms  Receive Next Message  ${socket}
+    ${received}   Wait Until Keyword Succeeds  5x  50 ms  Receive Next Message  ${socket}
     Should Be Equal  ${received}   ${message}  msg=Received ${received}, but ${message} was expected
 Create Camera Socket
     [arguments]   ${name}
@@ -48,61 +51,75 @@ Random Message
 #    Should Contain              ${result.stdout}  running
 
 Check Socket Library works
-    Create Socket                client0  ${uri_client}
+    Create Socket                client0  ${uri_camera}
     Do Exist Socket             client0
 
-Create 2 sockets
-    Create Socket                client0  ${uri_client}
-    Create Socket                client1  ${uri_client}
+Create camera client and send
+    Create Camera Socket         camera0
+    Create Client Socket         client0  camera0
+    send From Socket             camera0  hi
+    send From Socket             client0  hello
 
-Camera to Client with name
-    Create Camera Socket                cameraname
-    Create Client Socket                client     cameraname
+Create camera, client, send and receive
+    Create Camera Socket         camera0
+    Create Client Socket         client0  camera0
+    send From Socket             camera0  hi
+    send From Socket             client0  hello
 
-    send From Socket                      cameraname  hello_handsome
-    Wait To Receive Message             hello_handsome  client
+    sleep                        100 ms
+    Receive Next Message         client0  hi
 
-Camera to several clients with name
-    Create Camera Socket         camera0829
-    Create Client Socket         client0  camera0829
-    Create Client Socket         client1  camera0829
-    Create Client Socket         client2  camera0829
 
-    ${message}  Set Variable        hello to all
 
-    send From Socket               camera0829  ${message}
-    Wait To Receive Message      ${message}  client0
-    Wait To Receive Message      ${message}  client1
-    Wait To Receive Message      ${message}  client2
+#Camera to Client with name
+#    Create Camera Socket                cameraname
+#    Create Client Socket                client     cameraname
+#
+#    send From Socket                      cameraname  hello_handsome
+#    Wait To Receive Message             hello_handsome  client
 
-Camera to several clients with Random messages
-    Create Camera Socket         camera0829
-    Create Client Socket         client0  camera0829
-    Create Client Socket         client1  camera0829
-    Create Client Socket         client2  camera0829
-
-    ${message}   Random Message
-    send From Socket               camera0829  ${message}
-    Wait To Receive Message      ${message}  client0
-    Wait To Receive Message      ${message}  client1
-    Wait To Receive Message      ${message}  client2
-    ${message}   Random Message
-    send From Socket               camera0829  ${message}
-    Wait To Receive Message      ${message}  client0
-    Wait To Receive Message      ${message}  client1
-    Wait To Receive Message      ${message}  client2
-
-Recive commands from clients to one camera
-    Create Camera Socket        secondaryCamera
-    Create Camera Socket        mainCamera
-    Create Camera Socket        aCamera
-    Create Client Socket        client      mainCamera
-
-    ${command}   Random Message
-    ${frame}     Random Message
-
-    Send From Socket              mainCamera    ${frame}
-    Wait To Receive Message     ${frame}    client
-
-    Send From Socket              client        ${command}
-    Wait To Receive Message     ${command}    mainCamera
+#Camera to several clients with name
+#    Create Socket                ${uri_camera}camera0829
+#    Create Socket         client0  ${uri_client}camera0829
+#    Create Socket         client1  ${uri_client}camera0829
+#    Create Socket         client2  ${uri_client}camera0829
+#
+#    ${message}  Set Variable        hello to all
+#    sleep  500ms
+#    send From Socket               camera0829  ${message}
+#    sleep  500ms
+#    Wait To Receive Message      ${message}  client0
+#    Wait To Receive Message      ${message}  client1
+#    Wait To Receive Message      ${message}  client2
+#
+#Camera to several clients with Random messages
+#    Create Camera Socket         camera0829
+#    Create Client Socket         client0  camera0829
+#    Create Client Socket         client1  camera0829
+#    Create Client Socket         client2  camera0829
+#
+#    ${message}   Random Message
+#    send From Socket               camera0829  ${message}
+#    Wait To Receive Message      ${message}  client0
+#    Wait To Receive Message      ${message}  client1
+#    Wait To Receive Message      ${message}  client2
+#    ${message}   Random Message
+#    send From Socket               camera0829  ${message}
+#    Wait To Receive Message      ${message}  client0
+#    Wait To Receive Message      ${message}  client1
+#    Wait To Receive Message      ${message}  client2
+#
+#Recive commands from clients to one camera
+#    Create Camera Socket        secondaryCamera
+#    Create Camera Socket        mainCamera
+#    Create Camera Socket        aCamera
+#    Create Client Socket        client      mainCamera
+#
+#    ${command}   Random Message
+#    ${frame}     Random Message
+#
+#    Send From Socket              mainCamera    ${frame}
+#    Wait To Receive Message     ${frame}    client
+#
+#    Send From Socket              client        ${command}
+#    Wait To Receive Message     ${command}    mainCamera

@@ -7,7 +7,7 @@ var params;
 
 console.log("version 1.0");
 var port = process.env.PORT || process.env.port || process.env.OPENSHIFT_NODEJS_PORT || 8080;
-var ip = process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
+var ip = process.env.OPENSHIFT_NODEJS_IP || process.argv[2] || '0.0.0.0';
 
 const PASSWORD = process.env.WS_PASSWORD;
 const camDataPath = "/camera";
@@ -15,36 +15,41 @@ const clientDataPath = "/client";
 var camConnections = new WebsocketConnections.CameraConnections();
 
 /** http server: base */
-const httpserver = new httpServer(port, ip, camConnections);
+var httpserver = new httpServer(port, ip, camConnections, main);
 
-/** ws server: extends the http server */
-const wss = new WebSocket.Server({
-    verifyClient: verifyClient,
-    server: httpserver.server
-});
 
-console.log("running on %s:%d", ip, port);
+function main(server) {
+     /** websocket server extends the http server */
+    var wss = new WebSocket.Server({
+        verifyClient: verifyClient,
+        server: server
+    });
 
-wss.on('connection', function connection(ws) {
-    var parsedUrl = url.parse(ws.upgradeReq.url);
-    var path = parsedUrl.pathname;
+    console.log("running on %s:%d", ip, port);
 
-    switch (path) {
-        case camDataPath:  // a camera wants to register
-            var camera_name = params.camera_name || undefined;
-            camConnections.add(ws, camera_name);
-            break;
-        case clientDataPath:  // a client wants to register to a camera
-        case "/":
-            var camera_name = params.camera_name || "camera0";
-            camConnections.addClientToCamera(camera_name, ws);
-            break;
-        default:
-            console.log("rejected: no valid path");
-            ws.terminate();
-            return;
-    }
-});
+    wss.on('connection', function connection(ws) {
+        var parsedUrl = url.parse(ws.upgradeReq.url);
+        var path = parsedUrl.pathname;
+
+        switch (path) {
+            case camDataPath:  // a camera wants to register
+                var camera_name = params.camera_name || undefined;
+                camConnections.add(ws, camera_name);
+                break;
+            case clientDataPath:  // a client wants to register to a camera
+            case "/":
+                var camera_name = params.camera_name || "camera0";
+                camConnections.addClientToCamera(camera_name, ws, function(err){
+                    if(err){ws.terminate()}
+                });
+                break;
+            default:
+                console.log("rejected: no valid path");
+                ws.terminate();
+                return;
+        }
+    });
+}
 
 
 function verifyClient(info) {

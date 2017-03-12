@@ -19,7 +19,7 @@ class WebsocketLibrary:
     def __init__(self):
         self.ROBOT_LIBRARY_LISTENER = self
         # self.url = "%s:%d" % (host, port)
-        self.socketList = []
+        self.socketDic = {}
 
     def _start_suite(self, name, attrs):
         print 'started suite'
@@ -34,24 +34,22 @@ class WebsocketLibrary:
 
     def _get_socket(self, name):
         try:
-            for s in self.socketList:
-                if s.name == name:
-                    return s
+            return self.socketDic.get(name)
         except Exception as e:
             logger.error(e.message)
 
         raise Exception("%s socket not found in list" % name)
 
     def create_socket(self, name, uri):
-        self.socketList.append(self.WebSocketConnection(uri, name=name))
-        logger.info("created %s" % name)
+        ws = self.WebSocketConnection(uri, name=name)
+        self.socketDic[name] = ws
+        logger.info("created %s using %s" % (name, uri))
 
     def do_exist_socket(self, name):
-        for s in self.socketList:
-            if name == s.name:
-                logger.info("'%s' exists" % name)
-                return
-        raise AssertionError("'%s' does not exist" % name)
+        if self.socketDic.has_key(name):
+            logger.info("'%s' exists" % name)
+        else:
+            raise AssertionError("'%s' does not exist" % name)
 
 
     def send_from_socket(self, socket, message):
@@ -60,10 +58,10 @@ class WebsocketLibrary:
         logger.info("%s is sending '%s' message" % (s.name, message) )
 
     def stop_all_sockets(self):
-        for s in self.socketList:
-            s.stop()
-            logger.info("%s stopped" % s.name)
-            self.socketList.remove(s)
+        for name, socket in self.socketDic.items():
+            socket.stop()
+            logger.info("%s stopped" % socket.name)
+            self.socketDic.pop(name)
 
     def receive_message(self, name, message):
         def callback(received):
@@ -74,8 +72,12 @@ class WebsocketLibrary:
 
         self._get_socket(name).set_callback(callback)
 
-    def receive_next_message(self, name):
-        return self._get_socket(name).receive_next_message()
+    def receive_next_message(self, name, expect):
+        ws = self.socketDic.get(name)
+        if ws:
+            raise AssertionError("there is no websocket")
+        if not ws.receive_next_message() == expect:
+            raise AssertionError("Messages does not match")
 
     def status_should_be(self, expected_status):
         if expected_status != self._status:
@@ -125,13 +127,13 @@ class WebsocketLibrary:
         def on_open(self, ws):
             logger.info("opened new socket")
 
-            def run(*args):
-                while self.open_connection:
-                    # ws.send(self.queue.get(), opcode=websocket.ABNF.OPCODE_BINARY)
-                    data = str(self.out_queue.get())
-                    ws.send(data)
-
-            thread.start_new_thread(run, ())
+            # def run(*args):
+            #     while self.open_connection:
+            #         #ws.send(self.out_queue.get(), opcode=websocket.ABNF.OPCODE_BINARY)
+            #         data = self.out_queue.get()
+            #         ws.send(data)
+            #
+            # thread.start_new_thread(run, ())
 
         def stop(self):
             self.open_connection = False
@@ -141,10 +143,11 @@ class WebsocketLibrary:
             self.callback = callback
 
         def send_to_socket(self, data):
-            if len(data) != 0:
-                self.out_queue.put(data)
+            self.ws.send(data)
+            # if len(data) != 0:
+            #     self.out_queue.put(data)
 
-        def receive_next_message(self, timeout=2):
+        def receive_next_message(self, timeout=1):
             return self.in_queue.get(timeout=timeout)
 
 
