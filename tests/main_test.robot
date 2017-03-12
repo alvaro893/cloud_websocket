@@ -17,6 +17,7 @@ Library           OperatingSystem
 Library           Process
 Suite Setup       Run Cloud
 Suite Teardown    Close Cloud
+Test Teardown     sleep  100 ms
 
 *** Keywords ***
 Close cloud
@@ -30,9 +31,8 @@ Run Cloud
     Should Be True              ${is_running}   msg=Cloud is not running
 #    ${result} =                 Wait For Process         timeout=1s  on_timeout=kill
 Wait To Receive Message
-    [arguments]   ${message}  ${socket}
-    ${received}   Wait Until Keyword Succeeds  5x  50 ms  Receive Next Message  ${socket}
-    Should Be Equal  ${received}   ${message}  msg=Received ${received}, but ${message} was expected
+    [arguments]   ${socket}  ${message}
+    Wait Until Keyword Succeeds  5x  50 ms  Receive Next Message   ${socket}  ${message}
 Create Camera Socket
     [arguments]   ${name}
     create socket  ${name}  ${uri_camera}${name}
@@ -66,8 +66,10 @@ Create camera, client, send and receive
     send From Socket             camera0  hi
     send From Socket             client0  hello
 
-    sleep                        100 ms
-    Receive Next Message         client0  hi
+    Wait To Receive Message      camera0  hello
+    Wait To Receive Message      client0  hi
+#    Receive Next Message         camera0  hello
+#    Receive Next Message         client0  hi
 
 
 

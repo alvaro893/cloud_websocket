@@ -1,8 +1,6 @@
 #!/usr/bin/python
 import subprocess
 import sys
-import thread
-import time
 from Queue import Queue
 from threading import Thread
 import websocket
@@ -53,31 +51,25 @@ class WebsocketLibrary:
 
 
     def send_from_socket(self, socket, message):
-        s = self._get_socket(socket)
-        s.send_to_socket(message)
-        logger.info("%s is sending '%s' message" % (s.name, message) )
+        try:
+            s = self._get_socket(socket)
+            s.send_to_socket(message)
+            logger.info("%s is sending '%s' message" % (s.name, message) )
+        except websocket.WebSocketConnectionClosedException as e:
+            logger.warn(e.message + ".Try using 'Wait to' keyword style")
 
     def stop_all_sockets(self):
         for name, socket in self.socketDic.items():
             socket.stop()
-            logger.info("%s stopped" % socket.name)
-            self.socketDic.pop(name)
+        self.socketDic = {}
 
-    def receive_message(self, name, message):
-        def callback(received):
-            logger.info("received message:%s" % received)
-            if received != message:
-                raise AssertionError("Expected message to be '%s' but was '%s'."
-                                     % (message, received))
-
-        self._get_socket(name).set_callback(callback)
-
-    def receive_next_message(self, name, expect):
-        ws = self.socketDic.get(name)
-        if ws:
+    def receive_next_message(self, name, expected):
+        ws = self._get_socket(name)
+        received_message = ws.receive_next_message()
+        if not ws:
             raise AssertionError("there is no websocket")
-        if not ws.receive_next_message() == expect:
-            raise AssertionError("Messages does not match")
+        if not received_message == expected:
+            raise AssertionError("Messages does not match:'%s' is not '%s'" % (received_message, expected))
 
     def status_should_be(self, expected_status):
         if expected_status != self._status:
@@ -97,7 +89,6 @@ class WebsocketLibrary:
             self.url = url
             self.name = name
             self.open_connection = True
-            self.out_queue = Queue(10)
             self.in_queue = Queue(10)
             self.ws = websocket.WebSocketApp(self.url,
                                              on_message=self.on_message,
@@ -108,44 +99,27 @@ class WebsocketLibrary:
             self.start()
 
         def run(self):
-            while self.open_connection:
-                self.ws.run_forever()
-                logger.warn("try to reconnect in 5 secs")
-                time.sleep(5)
+            self.ws.run_forever()
 
         def on_message(self, ws, message):
             self.in_queue.put(message)
-            self.callback(message)
             logger.info("from %s:%s" % (self.name, message))
 
         def on_error(self, ws, error):
             logger.error(error)
 
         def on_close(self, ws):
-            logger.info("### closed ###")
+            logger.info("closed %s" % self.name)
 
         def on_open(self, ws):
-            logger.info("opened new socket")
-
-            # def run(*args):
-            #     while self.open_connection:
-            #         #ws.send(self.out_queue.get(), opcode=websocket.ABNF.OPCODE_BINARY)
-            #         data = self.out_queue.get()
-            #         ws.send(data)
-            #
-            # thread.start_new_thread(run, ())
+            logger.info("opened %s" % self.name)
 
         def stop(self):
             self.open_connection = False
             self.ws.close()
 
-        def set_callback(self, callback):
-            self.callback = callback
-
         def send_to_socket(self, data):
             self.ws.send(data)
-            # if len(data) != 0:
-            #     self.out_queue.put(data)
 
         def receive_next_message(self, timeout=1):
             return self.in_queue.get(timeout=timeout)
