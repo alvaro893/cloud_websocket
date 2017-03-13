@@ -17,7 +17,8 @@ var camConnections = new WebsocketConnections.CameraConnections();
 /** http server: base */
 var httpserver = new httpServer(port, ip, camConnections, main);
 
-
+/** @function
+ *  @param {http.Server} server */
 function main(server) {
      /** websocket server extends the http server */
     var wss = new WebSocket.Server({

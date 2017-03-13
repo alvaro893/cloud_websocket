@@ -37,6 +37,9 @@ ClientConnections.prototype.sendToAll = function (message) {
     });
 };
 
+ /**Close all clients in the array
+  * @method
+  */
 ClientConnections.prototype.closeAll = function (message) {
     this.clients.forEach(function (client, ind, arr) {
         client.close();
@@ -72,6 +75,11 @@ CameraConnections.prototype.getNames = function() {
     return arrayOfNames;
 };
 
+ /**
+  * @method
+  * @param {WebSocket} conn - connection to add
+  * @param {string} name - name of the socket
+  */
 CameraConnections.prototype.add = function (conn, name) {
     var cname = name;
     var self = this;

@@ -23,7 +23,6 @@ function HttpServer(port, ip, cameraConnections, callback) {
     }).on('clientError', function (err, socket) {
         socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
     }).listen(port, ip, function () {
-        console.log("listening to %s:%d", ip, port);
         callback(self.server);
     });
 }
