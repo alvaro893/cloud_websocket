@@ -17,15 +17,16 @@ var clientDataPath = "/client";
 var camConnections = new WebsocketConnections.CameraConnections();
 
 /** http server: base */
-var httpserver = new httpServer(port, ip, camConnections, main);
+// var httpserver = new httpServer(port, ip, camConnections, main);
 
 /** @function
  *  @param {http.Server} server */
 function main(server) {
      /** websocket server extends the http server */
     var wss = new WebSocket.Server({
+        host: ip,
+        port: port,
         verifyClient: verifyClient,
-        server: server
     });
 
     console.log("running on %s:%d", ip, port);
@@ -53,6 +54,8 @@ function main(server) {
         }
     });
 }
+
+main();
 
 
 function verifyClient(info) {
