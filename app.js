@@ -1,17 +1,19 @@
 "use strict";
-const WebsocketConnections = require('./websocketConnections');
-const WebSocket = require('ws');
-const url = require('url');
-const httpServer = require('./httpServer');
+
+
+var WebsocketConnections = require('./websocketConnections');
+var WebSocket = require('ws');
+var url = require('url');
+var httpServer = require('./httpServer');
 var params;
 
 console.log("version 1.0");
 var port = process.env.PORT || process.env.port || process.env.OPENSHIFT_NODEJS_PORT || 8080;
 var ip = process.env.OPENSHIFT_NODEJS_IP || process.argv[2] || '0.0.0.0';
 
-const PASSWORD = process.env.WS_PASSWORD;
-const camDataPath = "/camera";
-const clientDataPath = "/client";
+var PASSWORD = process.env.WS_PASSWORD;
+var camDataPath = "/camera";
+var clientDataPath = "/client";
 var camConnections = new WebsocketConnections.CameraConnections();
 
 /** http server: base */
@@ -41,7 +43,7 @@ function main(server) {
             case "/":
                 var camera_name = params.camera_name || "camera0";
                 camConnections.addClientToCamera(camera_name, ws, function(err){
-                    if(err){ws.terminate()}
+                    if(err){ws.terminate();}
                 });
                 break;
             default:

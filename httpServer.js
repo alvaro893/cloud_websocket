@@ -1,5 +1,5 @@
-const http = require('http');
-const url = require('url');
+var http = require('http');
+var url = require('url');
 
 
 /**@constructor 

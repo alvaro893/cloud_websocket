@@ -48,7 +48,10 @@ class WebsocketLibrary:
             logger.info("'%s' exists" % name)
         else:
             raise AssertionError("'%s' does not exist" % name)
-
+    
+    def close_socket(self,name):
+        s = self._get_socket(name)
+        s.stop()
 
     def send_from_socket(self, socket, message):
         try:

@@ -48,6 +48,16 @@ Send Random Message From
     Send From Socket  ${socket}  ${message}
 
 *** Test Cases ***
+close sockets
+    create Camera Socket         camera0
+    Create Client Socket         client          camera0
+    sleep                                100 ms
+    Close Socket                 client
+    Create Client Socket         client2          camera0
+    sleep                                100 ms
+    Close Socket                 client2
+
+
 Check Socket Library works
     Create Socket                client0  ${uri_camera}
     Do Exist Socket             client0
@@ -124,3 +134,4 @@ several cameras with several clients, bidirectional communication
 
     messages In Queue Should Be          cam       2
     messages In Queue Should Be          camf      2
+

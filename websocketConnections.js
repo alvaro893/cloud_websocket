@@ -1,4 +1,4 @@
-const WebSocket = require('ws');
+var WebSocket = require('ws');
  
  /** A class that hold WebSocket clients for a camera
  * @class
