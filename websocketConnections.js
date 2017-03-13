@@ -94,13 +94,19 @@ CameraConnections.prototype.add = function (conn, name) {
     var camera = new Camera(conn, cname);
     this.cameras.push(camera);
 
+    /** Callled when a connection to a camera is closed
+     * @callback */
     function closingCamera(code, message) {
-        camera.conn.close();
-        camera.clients.closeAll();
-        self.removeCamera(camera);
+        try{
+            camera.clients.closeAll();
+            self.removeCamera(camera);
+        }catch(err){
+            console.error("Error on closing clients:"+err.message);
+        }
         console.log("Camera %s closing connection: %d, %s", camera.name, code, message);
     }
-
+    /** Callled when data from a camera is comming
+     * @callback */
     function incomingFromCamera(message, flags) {
         try {
             camera.clients.sendToAll(message);
@@ -135,13 +141,23 @@ CameraConnections.prototype.addClientToCamera = function (cameraName, clientConn
         clientConn.on('close', closingClient);
         camera.clients.add(clientConn);
         callback();
-
+        
+        /** Called when a client sent data
+         * @callback
+         * @param {string} message 
+         * @param {object} flags 
+         */
         function incomingFromClient(message, flags) {
             camera.sendMessage(message);
         }
-
-        function closingClient(code, message) {
-            console.log("Client closing connection for: %s camera. info: %d, %s", camera.name, code, message);
+        /** Called when a connection to a client is closed
+         * @callback
+         * @param {number} code 
+         * @param {string} message 
+         */
+        function closingClient(code) {
+            camera.clients.close(clientConn);
+            console.log("Closing client connection for: %s camera. info: %d, %s", camera.name, code);
         }
 
     }
