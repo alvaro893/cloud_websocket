@@ -1,4 +1,5 @@
-
+const WebSocket = require('ws');
+ 
  /** A class that hold WebSocket clients for a camera
  * @class
  */
@@ -23,6 +24,9 @@ ClientConnections.prototype.add = function (conn) {
  * @param {WebSocket} conn - websocket connection to close
  */
 ClientConnections.prototype.close = function (conn) {
+    if(this.clients.length < 1){
+        return;
+    }
     var indx = this.clients.indexOf(conn);
     this.clients.splice(indx, 1);
 };
@@ -33,7 +37,9 @@ ClientConnections.prototype.close = function (conn) {
  */
 ClientConnections.prototype.sendToAll = function (message) {
     this.clients.forEach(function (client, ind, arr) {
-        client.send(message);
+        checkSocketOpen(client, function(){
+            client.send(message);
+        });
     });
 };
 
@@ -42,7 +48,11 @@ ClientConnections.prototype.sendToAll = function (message) {
   */
 ClientConnections.prototype.closeAll = function (message) {
     this.clients.forEach(function (client, ind, arr) {
-        client.close();
+        try{
+            client.close();
+        }catch(err){
+            console.error(err.message);
+        }
     });
 };
 
@@ -201,9 +211,27 @@ function Camera(conn, name) {
 }
 
 Camera.prototype.sendMessage = function (message) {
-    this.conn.send(message);
+    var conn = this.conn;
+    checkSocketOpen(conn, function(){
+        conn.send(message);
+    });
 };
 
 exports.ClientCamera = Camera;
 exports.ClientConnections = ClientConnections;
 exports.CameraConnections = CameraConnections;
+
+/**
+ * 
+ * @param {WebSocket} socket 
+ * @param {} callback
+ */
+function checkSocketOpen(socket, callback){
+    if(!socket){
+        console.error('socket does not exists');
+        return;
+    }
+    if(socket.readyState == WebSocket.OPEN){
+        callback();
+    }
+}
