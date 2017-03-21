@@ -1,81 +1,75 @@
-const WebsocketConnections = require('./websocketConnections')
-const WebSocket = require('ws');
-const url = require('url');
+"use strict";
 
-console.log("version 1.0")
+
+var WebsocketConnections = require('./websocketConnections');
+var WebSocket = require('ws');
+var url = require('url');
+var httpServer = require('./httpServer');
+var params;
+
+console.log("version 1.0");
 var port = process.env.PORT || process.env.port || process.env.OPENSHIFT_NODEJS_PORT || 8080;
-var ip = process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
+var ip = process.env.OPENSHIFT_NODEJS_IP || process.argv[2] || '0.0.0.0';
 
-const PASSWORD = process.env.WS_PASSWORD
-const camDataPath = "/camera"
-const clientDataPath = "/client"
-var camSocket = null
-var clientSockets = new WebsocketConnections.ClientConnections()
+var PASSWORD = process.env.WS_PASSWORD;
+var camDataPath = "/camera";
+var clientDataPath = "/client";
+var camConnections = new WebsocketConnections.CameraConnections();
 
-const wss = new WebSocket.Server({
-    host: ip,
-    port: port,
-    verifyClient: verifyClient
-});
+/** http server: base */
+// var httpserver = new httpServer(port, ip, camConnections, main);
 
-console.log("running on %s:%d", wss.options.host, wss.options.port)
+/** @function
+ *  @param {http.Server} server */
+function main(server) {
+     /** websocket server extends the http server */
+    var wss = new WebSocket.Server({
+        host: ip,
+        port: port,
+        verifyClient: verifyClient,
+    });
 
-wss.on('connection', function connection(ws) {
-    var parsedUrl = url.parse(ws.upgradeReq.url)
-    var path = parsedUrl.pathname
-    var incomingCallback = null
-    var closeCallback = null
+    console.log("running on %s:%d", ip, port);
 
-    switch (path) {
-        case camDataPath:
-            camSocket = ws
-            incomingCallback = incomingFromCamera
-            closeCallback = function(code, message){camSocket = null; logClosing(code,message)}
-            break;
-        case clientDataPath:
-        case "/":
-            clientSockets.add(ws)
-            incomingCallback = clientSockets.incomingCallback(camSocket)
-            closeCallback = function(code, message){clientSockets.close(ws); logClosing(code, message)}
-            break;
-        default:
-            console.warn("rejected: no valid path");
-            ws.terminate()
-            return
-    }
+    wss.on('connection', function connection(ws) {
+        var parsedUrl = url.parse(ws.upgradeReq.url);
+        var path = parsedUrl.pathname;
 
-    ws.on('message', incomingCallback);
-    ws.on('close', closeCallback);
-});
-
-function logClosing(code, message){
-    console.log("client close connection: %d, %s", code, message)
-}
-
-function incomingFromCamera(message, flags) {
-    if (camSocket != null) {
-        try {
-            clientSockets.sendToAll(message)
-        } catch (e) {
-            console.error(e)
+        switch (path) {
+            case camDataPath:  // a camera wants to register
+                var camera_name = params.camera_name || undefined;
+                camConnections.add(ws, camera_name);
+                break;
+            case clientDataPath:  // a client wants to register to a camera
+            case "/":
+                var camera_name = params.camera_name || "camera0";
+                camConnections.addClientToCamera(camera_name, ws, function(err){
+                    if(err){ws.terminate();}
+                });
+                break;
+            default:
+                console.log("rejected: no valid path");
+                ws.terminate();
+                return;
         }
-    }
+    });
 }
 
+main();
 
 
 function verifyClient(info) {
-    var acceptHandshake = false
-    var accepted = "rejected: no valid password, use 'pass' parameter in the handshake please"
+    var acceptHandshake = false;
+    var accepted = "rejected: no valid password, use 'pass' parameter in the handshake please";
 
-    clientUrl = url.parse(info.req.url, true)
-    params = clientUrl.query
+    var clientUrl = url.parse(info.req.url, true);
+    params = clientUrl.query;
 
-    acceptHandshake = true//params.pass == PASSWORD
+    acceptHandshake = params.pass == PASSWORD;
 
     if (acceptHandshake) {
-        accepted = "accepted"
+        accepted = "accepted";
     }
-    console.warn("new client %s: %s", accepted, info.origin)
-    return acceptHandshake
+    console.log("new client %s: %s", accepted, info.req.url);
+    return acceptHandshake;
 }

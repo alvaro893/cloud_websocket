@@ -6,7 +6,7 @@
   "author": "Alvaro Bolaños Rodriguez",
   "license": "ISC",
   "dependencies": {
-    "ws": "^1.1.1"
+    "ws": "1.1.4"
   },
   "devDependencies": {
     "chai": "^3.5.0",
@@ -20,7 +20,8 @@
   "scripts": {
     "dev": "nodemon app.js",
     "start": "node app.js",
-    "test": "mocha tests"
+    "test": "mocha tests",
+    "robot": "./run_robot_tests.sh"
   },
   "repository": {
     "type": "git",
