@@ -1,10 +1,10 @@
 "use strict";
 
-
+const express = require('express');
 var WebsocketConnections = require('./websocketConnections');
 var WebSocket = require('ws');
 var url = require('url');
-var httpServer = require('./httpServer');
+var http = require('http');
 var params;
 
 console.log("version 1.0");
@@ -17,11 +17,17 @@ var clientDataPath = "/client";
 var camConnections = new WebsocketConnections.CameraConnections();
 
 /** http server: base */
-var httpserver = new httpServer(port, ip, camConnections, main);
+const app = express();
+app.get('/cams', function(req, res){
+    res.send({ names: camConnections.getNames(), count: camConnections.count()});
+});
+const server = http.createServer(app);
+
+
 
 /** @function
  *  @param {http.Server} server */
-function main(server) {
+function main() {
      /** websocket server extends the http server */
     var wss = new WebSocket.Server({
         verifyClient: verifyClient,
@@ -52,6 +58,8 @@ function main(server) {
                 return;
         }
     });
+
+    server.listen(port, ip);
 }
 
 
@@ -70,3 +78,5 @@ function verifyClient(info) {
     console.log("new client %s: %s", accepted, info.req.url);
     return acceptHandshake;
 }
+
+main();
