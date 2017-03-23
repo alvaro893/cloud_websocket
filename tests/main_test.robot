@@ -1,10 +1,10 @@
 *** Variables ***
 ${password}                30022
-${url}                     ws://localhost:8080
+${url}                     localhost:8080
 ${camera_name_param}           camera_name=
 ${url_params}              ?pass=${password}
-${uri_client}              ${url}/client${url_params}&${camera_name_param}
-${uri_camera}              ${url}/camera${url_params}&${camera_name_param}
+${uri_client}              ws://${url}/client${url_params}&${camera_name_param}
+${uri_camera}              ws://${url}/camera${url_params}&${camera_name_param}
 ${cloud_path}               ../
 ${cloud_app}                npm start --prefix  ${cloud_path}
 ${outf}                    log/stdout.txt
@@ -15,6 +15,7 @@ ${errf}                    log/stderr.txt
 Library           lib/WebsocketLibrary.py
 Library           OperatingSystem
 Library           Process
+Library           HttpLibrary.HTTP
 Suite Setup       Run Cloud
 Suite Teardown    Close Cloud
 Test Teardown     sleep  200 ms
@@ -49,6 +50,13 @@ Send Random Message From
     [arguments]  ${socket}
     ${message}   Random Message
     Send From Socket  ${socket}  ${message}
+Get Cameras
+    Create Http Context 	${url}   http
+	GET 	/cams
+	Response Status Code Should Equal 	200
+    ${body} = 	Get Response Body 	
+    Should Start With 	${body} 	{
+    Log Json  ${body}
 
 *** Test Cases ***
 close sockets
@@ -102,6 +110,7 @@ Create camera client and send
     create Camera Socket         camera4
     Create Client Socket         client          camera-special
     sleep                                100 ms
+    Get Cameras
 
     Send Random Message From             camera-special
     Send Random Message From             camera-special
@@ -120,6 +129,7 @@ several cameras with several clients, bidirectional communication
     Create Client Socket        client2      camf
     Create Client Socket        client3      camf
     sleep                                100 ms
+    Get Cameras
 
     Send Random Message From             cam
     Send Random Message From             camf
@@ -137,3 +147,5 @@ several cameras with several clients, bidirectional communication
     Wait Until Queue          cam       2
     Wait Until Queue          camf      2
 
+Http Server
+    Get Cameras
