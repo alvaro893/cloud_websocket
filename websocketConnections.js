@@ -77,12 +77,14 @@ CameraConnections.prototype.count = function() {
  * @method
  * @return {array} - array of names of the cameras
  */
-CameraConnections.prototype.getNames = function() {
-    var arrayOfNames = [];
+CameraConnections.prototype.getInfo = function() {
+    var cams = [];
     this.cameras.forEach(function(element) {
-        arrayOfNames.push(element.name);
+        var infoObject = {name:element.name, ip:element.ip};
+        console.log(infoObject)
+        cams.push(infoObject);
     }, this);
-    return arrayOfNames;
+    return cams;    
 };
 
  /**
@@ -90,7 +92,7 @@ CameraConnections.prototype.getNames = function() {
   * @param {WebSocket} conn - connection to add
   * @param {string} name - name of the socket
   */
-CameraConnections.prototype.add = function (conn, name) {
+CameraConnections.prototype.add = function (conn, name, ip) {
     var cname = name;
     var self = this;
     if (name === undefined) {
@@ -101,7 +103,7 @@ CameraConnections.prototype.add = function (conn, name) {
     conn.on('message', incomingFromCamera);
     conn.on('close', closingCamera);
 
-    var camera = new Camera(conn, cname);
+    var camera = new Camera(conn, cname, ip);
     this.cameras.push(camera);
 
     /** Callled when a connection to a camera is closed
@@ -203,10 +205,12 @@ CameraConnections.prototype.getCamera = function (name, callback) {
 *  A camera client, it has a list of clients attached, and a unique name
 *  @param {WebSocket} conn - connection object
 *  @param {String} name - name of this camera (for identification)
+*  @param {String} ip - ip address of this camera
 */
-function Camera(conn, name) {
+function Camera(conn, name, ip) {
     this.conn = conn;
     this.name = name;
+    this.ip = ip;
     this.clients = new ClientConnections();
 }
 

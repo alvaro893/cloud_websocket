@@ -6,6 +6,7 @@
   "author": "Alvaro Bolaños Rodriguez",
   "license": "ISC",
   "dependencies": {
+    "express": "^4.15.2",
     "ws": "1.1.4"
   },
   "devDependencies": {

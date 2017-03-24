@@ -1,10 +1,10 @@
 "use strict";
 
-
+const express = require('express');
 var WebsocketConnections = require('./websocketConnections');
 var WebSocket = require('ws');
 var url = require('url');
-var httpServer = require('./httpServer');
+var http = require('http');
 var params;
 
 console.log("version 1.0");
@@ -17,16 +17,20 @@ var clientDataPath = "/client";
 var camConnections = new WebsocketConnections.CameraConnections();
 
 /** http server: base */
-// var httpserver = new httpServer(port, ip, camConnections, main);
+const app = express();
+app.get('/cams', function(req, res){
+    res.send({ cams: camConnections.getInfo(), count: camConnections.count()});
+});
+const server = http.createServer(app);
+main(server)
 
 /** @function
  *  @param {http.Server} server */
 function main(server) {
      /** websocket server extends the http server */
     var wss = new WebSocket.Server({
-        host: ip,
-        port: port,
         verifyClient: verifyClient,
+        server: server
     });
 
     console.log("running on %s:%d", ip, port);
@@ -38,7 +42,8 @@ function main(server) {
         switch (path) {
             case camDataPath:  // a camera wants to register
                 var camera_name = params.camera_name || undefined;
-                camConnections.add(ws, camera_name);
+                var ipAddress = ws.upgradeReq.connection.remoteAddress;
+                camConnections.add(ws, camera_name, ipAddress);
                 break;
             case clientDataPath:  // a client wants to register to a camera
             case "/":
@@ -53,15 +58,15 @@ function main(server) {
                 return;
         }
     });
-}
 
-main();
+    server.listen(port, ip);
+}
 
 
 function verifyClient(info) {
     var acceptHandshake = false;
     var accepted = "rejected: no valid password, use 'pass' parameter in the handshake please";
-
+    var ip = info.req.connection.remoteAddress;
     var clientUrl = url.parse(info.req.url, true);
     params = clientUrl.query;
 
