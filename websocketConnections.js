@@ -73,14 +73,19 @@ CameraConnections.prototype.count = function() {
     return this.cameras.length;
 };
 
+
 /**
  * @method
  * @return {array} - array of names of the cameras
  */
 CameraConnections.prototype.getInfo = function() {
     var cams = [];
-    this.cameras.forEach(function(element) {
-        var infoObject = {name:element.name, ip:element.ip};
+    this.cameras.forEach(function(element, index) {
+        var name = element.name;
+        if (element.name === undefined){
+            name = "camera"+index;
+        }
+        var infoObject = {name:name, ip:element.ip};
         console.log(infoObject)
         cams.push(infoObject);
     }, this);
@@ -95,8 +100,8 @@ CameraConnections.prototype.getInfo = function() {
 CameraConnections.prototype.add = function (conn, name, ip) {
     var cname = name;
     var self = this;
-    if (name === undefined) {
-        cname = "camera" + this.cameras.length;
+    if (!cname) {
+        cname = undefined; //name will be based on index
     }
 
     // defining the callbacks for this camera
@@ -117,7 +122,7 @@ CameraConnections.prototype.add = function (conn, name, ip) {
         }
         console.log("Camera %s closing connection: %d, %s", camera.name, code, message);
     }
-    /** Callled when data from a camera is comming
+    /** Called when data from a camera is comming
      * @callback */
     function incomingFromCamera(message, flags) {
         try {
@@ -191,8 +196,8 @@ CameraConnections.prototype.close = function(camera){
  */
 CameraConnections.prototype.getCamera = function (name, callback) {
     var cameraFound;
-    this.cameras.forEach(function(c) {
-        if (c.name == name) {
+    this.cameras.forEach(function(c, index) {
+        if (c.name == name || name == "camera"+index) {
             cameraFound = c;
         }
     }, this);

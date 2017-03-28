@@ -40,6 +40,8 @@ Wait Until Queue
 Create Camera Socket
     [arguments]   ${name}
     create socket  ${name}  ${uri_camera}${name}
+Create Camera Socket Noname
+    create socket  noname  ${uri_camera}
 Create Client Socket
     [arguments]   ${name}   ${camera_socket}
     create socket  ${name}  ${uri_client}${camera_socket}
@@ -57,6 +59,15 @@ Get Cameras
     ${body} = 	Get Response Body 	
     Should Start With 	${body} 	{
     Log Json  ${body}
+Number Of Cameras Should Be
+    [arguments]   ${n}
+    Create Http Context 	${url}   http
+	GET 	/cams
+	Response Status Code Should Equal 	200
+    ${body} = 	Get Response Body 	
+    Json Value Should Equal  ${body}  /count  ${n}
+    Log Json  ${body}
+
 
 *** Test Cases ***
 close sockets
@@ -101,6 +112,17 @@ Create camera client and send
 #     Wait To Receive Message      client0  hi clients
 #     Wait To Receive Message      client1  hi clients
 #     Wait To Receive Message      client2  hi clients
+
+cameras without name and with name
+    create Camera Socket Noname
+    create Camera Socket Noname
+    create Camera Socket Noname
+    create Camera Socket         1111special-cam1111
+    create Camera Socket Noname
+    create Camera Socket Noname
+    sleep  80 ms
+    Number Of Cameras Should Be    6
+
 
 5 cameras, 1 client, 5 messages
     create Camera Socket         camera0
