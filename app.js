@@ -42,7 +42,11 @@ function main(server) {
         switch (path) {
             case camDataPath:  // a camera wants to register
                 var camera_name = params.camera_name || undefined;
-                var ipAddress = ws.upgradeReq.connection.remoteAddress;
+                var req = ws.upgradeReq;
+                var ipAddress = req.headers['x-forwarded-for'] || 
+                    req.connection.remoteAddress || 
+                    req.socket.remoteAddress ||
+                    req.connection.socket.remoteAddress;
                 camConnections.add(ws, camera_name, ipAddress);
                 break;
             case clientDataPath:  // a client wants to register to a camera
