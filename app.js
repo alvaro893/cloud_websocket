@@ -5,6 +5,7 @@ var WebsocketConnections = require('./websocketConnections');
 var WebSocket = require('ws');
 var url = require('url');
 var http = require('http');
+var getIP = require('ipware')().get_ip;
 var params;
 
 console.log("version 1.0");
@@ -43,10 +44,10 @@ function main(server) {
             case camDataPath:  // a camera wants to register
                 var camera_name = params.camera_name || undefined;
                 var req = ws.upgradeReq;
-                var ipAddress = req.headers['x-forwarded-for'] || 
-                    req.connection.remoteAddress || 
-                    req.socket.remoteAddress ||
-                    req.connection.socket.remoteAddress;
+                var ipInfo = getIP(req);
+                var ipAddress = [req.headers['x-forwarded-for'],
+                                req.connection.remoteAddress,
+                                ipInfo];
                 camConnections.add(ws, camera_name, ipAddress);
                 break;
             case clientDataPath:  // a client wants to register to a camera
