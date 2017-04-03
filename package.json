@@ -7,7 +7,6 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.15.2",
-    "ipware": "^1.0.0",
     "ws": "1.1.4"
   },
   "devDependencies": {
