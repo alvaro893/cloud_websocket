@@ -1,5 +1,5 @@
 "use strict";
-
+require('console-stamp')(console, 'dd.mm HH:MM:ss.l'); // formats the console output
 const express = require('express');
 var WebsocketConnections = require('./websocketConnections');
 var WebSocket = require('ws');
