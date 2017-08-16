@@ -42,11 +42,7 @@ function main(server) {
         switch (path) {
             case camDataPath:  // a camera wants to register
                 var camera_name = params.camera_name || undefined;
-                var req = ws.upgradeReq;
-                var ipAddress = req.headers['x-forwarded-for'] || 
-                    req.connection.remoteAddress || 
-                    req.socket.remoteAddress ||
-                    req.connection.socket.remoteAddress;
+                var ipAddress = getIpAddresses(ws);
                 camConnections.add(ws, camera_name, ipAddress);
                 break;
             case clientDataPath:  // a client wants to register to a camera
@@ -54,6 +50,8 @@ function main(server) {
                 var camera_name = params.camera_name || "camera0";
                 camConnections.addClientToCamera(camera_name, ws, function(err){
                     if(err){ws.terminate();}
+                    var count = camConnections.getClientCount();
+                    console.log("number of clients: %d", count);                    
                 });
                 break;
             default:
@@ -79,6 +77,16 @@ function verifyClient(info) {
     if (acceptHandshake) {
         accepted = "accepted";
     }
-    console.log("new client %s: %s", accepted, info.req.url);
+    console.log("new client %s: %s, ip: %s", accepted, info.req.url, ip);
     return acceptHandshake;
+}
+
+
+function getIpAddresses(ws){
+    var req = ws.upgradeReq;
+    var ipAddress = req.headers['x-forwarded-for'] || 
+        req.connection.remoteAddress || 
+        req.socket.remoteAddress ||
+        req.connection.socket.remoteAddress;
+    return ipAddress;
 }

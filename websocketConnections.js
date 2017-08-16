@@ -73,6 +73,18 @@ CameraConnections.prototype.count = function() {
     return this.cameras.length;
 };
 
+/**
+ * @method
+ * @return {number} - number of cameras in the connected
+ */
+CameraConnections.prototype.getClientCount = function() {
+    var count = 0;
+    this.cameras.forEach(function(camera, inx, arr){
+        count += camera.clients.getLength();
+    });
+    return count;
+};
+
 
 /**
  * @method
@@ -86,7 +98,6 @@ CameraConnections.prototype.getInfo = function() {
             name = "camera"+index;
         }
         var infoObject = {name:name, ip:element.ip};
-        console.log(infoObject)
         cams.push(infoObject);
     }, this);
     return cams;    
@@ -157,7 +168,7 @@ CameraConnections.prototype.addClientToCamera = function (cameraName, clientConn
         clientConn.on('message', incomingFromClient);
         clientConn.on('close', closingClient);
         camera.clients.add(clientConn);
-        callback();
+        callback(undefined);
         
         /** Called when a client sent data
          * @callback
