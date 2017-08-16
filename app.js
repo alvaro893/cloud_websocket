@@ -14,12 +14,14 @@ var ip = process.env.OPENSHIFT_NODEJS_IP || process.argv[2] || '0.0.0.0';
 var PASSWORD = process.env.WS_PASSWORD;
 var camDataPath = "/camera";
 var clientDataPath = "/client";
+var camsInfoPath = '/cams';
 var camConnections = new WebsocketConnections.CameraConnections();
 
 /** http server: base */
 const app = express();
-app.get('/cams', function(req, res){
+app.get(camsInfoPath, function(req, res){
     res.send({ cams: camConnections.getInfo(), count: camConnections.count()});
+    console.log("new GET %s", req.url); 
 });
 const server = http.createServer(app);
 main(server)
@@ -46,12 +48,10 @@ function main(server) {
                 camConnections.add(ws, camera_name, ipAddress);
                 break;
             case clientDataPath:  // a client wants to register to a camera
-            case "/":
+            //case "/":
                 var camera_name = params.camera_name || "camera0";
                 camConnections.addClientToCamera(camera_name, ws, function(err){
-                    if(err){ws.terminate();}
-                    var count = camConnections.getClientCount();
-                    console.log("number of clients: %d", count);                    
+                    if(err){ws.terminate();}         
                 });
                 break;
             default:
@@ -59,6 +59,8 @@ function main(server) {
                 ws.terminate();
                 return;
         }
+        var count = camConnections.getClientCount();
+        console.log("new WS %s, ip: %s, number of clients: %d", ws.upgradeReq.url, getIpAddresses(ws), count);    
     });
 
     server.listen(port, ip);
@@ -67,17 +69,15 @@ function main(server) {
 
 function verifyClient(info) {
     var acceptHandshake = false;
-    var accepted = "rejected: no valid password, use 'pass' parameter in the handshake please";
     var ip = info.req.connection.remoteAddress;
     var clientUrl = url.parse(info.req.url, true);
     params = clientUrl.query;
 
     acceptHandshake = params.pass == PASSWORD;
 
-    if (acceptHandshake) {
-        accepted = "accepted";
+    if (!acceptHandshake) {
+        console.log("client rejected: no valid password, use 'pass' parameter in the handshake please");
     }
-    console.log("new client %s: %s, ip: %s", accepted, info.req.url, ip);
     return acceptHandshake;
 }
 
