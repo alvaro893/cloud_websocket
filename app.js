@@ -37,14 +37,17 @@ function main(server) {
 
     console.log("running on %s:%d", ip, port);
 
-    wss.on('connection', function connection(ws) {
-        var parsedUrl = url.parse(ws.upgradeReq.url);
+    wss.on('connection', function connection(ws, upgradeReq) {
+        var parsedUrl = url.parse(upgradeReq.url);
         var path = parsedUrl.pathname;
+        var count = camConnections.getClientCount()
+        var ip = getIpAddresses(upgradeReq);
+        console.log("new WS %s, ip: %s, number of clients: %d", upgradeReq.url, ip , count);    
 
         switch (path) {
             case camDataPath:  // a camera wants to register
                 var camera_name = params.camera_name || undefined;
-                var ipAddress = getIpAddresses(ws);
+                var ipAddress = getIpAddresses(upgradeReq);
                 camConnections.add(ws, camera_name, ipAddress);
                 break;
             case clientDataPath:  // a client wants to register to a camera
@@ -59,8 +62,6 @@ function main(server) {
                 ws.terminate();
                 return;
         }
-        var count = camConnections.getClientCount();
-        console.log("new WS %s, ip: %s, number of clients: %d", ws.upgradeReq.url, getIpAddresses(ws), count);    
     });
 
     server.listen(port, ip);
@@ -82,8 +83,7 @@ function verifyClient(info) {
 }
 
 
-function getIpAddresses(ws){
-    var req = ws.upgradeReq;
+function getIpAddresses(req){
     var ipAddress = req.headers['x-forwarded-for'] || 
         req.connection.remoteAddress || 
         req.socket.remoteAddress ||

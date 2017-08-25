@@ -1,5 +1,5 @@
 {
-  "name": "cloud-ir",
+  "name": "cloudwebsocket",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
@@ -8,7 +8,7 @@
   "dependencies": {
     "console-stamp": "^0.2.5",
     "express": "^4.15.2",
-    "ws": "1.1.4"
+    "ws": "3.1.0"
   },
   "devDependencies": {
     "chai": "^3.5.0",

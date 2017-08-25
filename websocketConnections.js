@@ -135,7 +135,7 @@ CameraConnections.prototype.add = function (conn, name, ip) {
     }
     /** Called when data from a camera is comming
      * @callback */
-    function incomingFromCamera(message, flags) {
+    function incomingFromCamera(message) {
         try {
             camera.clients.sendToAll(message);
         } catch (e) {
@@ -173,9 +173,8 @@ CameraConnections.prototype.addClientToCamera = function (cameraName, clientConn
         /** Called when a client sent data
          * @callback
          * @param {string} message 
-         * @param {object} flags 
          */
-        function incomingFromClient(message, flags) {
+        function incomingFromClient(message) {
             camera.sendMessage(message);
         }
         /** Called when a connection to a client is closed
