@@ -25,7 +25,6 @@ var camConnections = new WebsocketConnections.CameraConnections();
 const app = express();
 app.use(logReq); // logging middleware
 app.get(camsInfoPath, function(req, res){
-    logReq(req); 
     res.send({ cams: camConnections.getInfo(), count: camConnections.count()});
 });
 app.post(peoplePath, bodyParser.text(), function(req,res){
