@@ -6,6 +6,7 @@
   "author": "Alvaro Bolaños Rodriguez",
   "license": "ISC",
   "dependencies": {
+    "body-parser": "^1.18.2",
     "console-stamp": "^0.2.5",
     "express": "^4.15.2",
     "ws": "3.1.0"

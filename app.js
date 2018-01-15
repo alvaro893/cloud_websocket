@@ -1,6 +1,8 @@
 "use strict";
 require('console-stamp')(console, 'dd.mm HH:MM:ss.l'); // formats the console output
 const express = require('express');
+const bodyParser = require('body-parser');
+//const fs = require('fs');
 var WebsocketConnections = require('./websocketConnections');
 var WebSocket = require('ws');
 var url = require('url');
@@ -15,16 +17,49 @@ var PASSWORD = process.env.WS_PASSWORD;
 var camDataPath = "/camera";
 var clientDataPath = "/client";
 var camsInfoPath = '/cams';
+var peoplePath = '/people_count';
+var heatmapPath = '/heatmap';
 var camConnections = new WebsocketConnections.CameraConnections();
 
 /** http server: base */
 const app = express();
+app.use(logReq); // logging middleware
 app.get(camsInfoPath, function(req, res){
+    logReq(req); 
     res.send({ cams: camConnections.getInfo(), count: camConnections.count()});
-    console.log("new GET %s", req.url); 
+});
+app.post(peoplePath, bodyParser.text(), function(req,res){
+    checkCamera(req, res, function(camera) {
+        camera.peopleCount = req.body;
+        //fs.createWriteStream('people.txt').write(""+camera.peopleCount);//(test only)
+    });
+    res.end("ok");
+});
+
+app.get(peoplePath, function(req, res){
+    checkCamera(req, res, function(camera){ res.send(''+camera.peopleCount); }); 
+});
+
+app.post(heatmapPath, bodyParser.raw({type:"image/png", limit:'500kb'}), function(req, res){
+    if(req.get('Content-Type') != "image/png") {res.status(415).end("must be png image");}
+    checkCamera(req, res, function(camera) {
+            camera.heatmap = req.body;
+            //fs.createWriteStream('pic'+new Date().getTime()+'.png').write(camera.heatmap);//create image (test only)
+    });
+    res.end("ok");
+});
+
+app.get(heatmapPath, function(req,res){
+    checkCamera(req, res, function(camera){
+        if(camera.heatmap) res.send(camera.heatmap);
+        else res.status(400).send("no heatmap yet");
+    });
 });
 const server = http.createServer(app);
-main(server)
+
+
+/* MAIN entry point */
+main(server);
 
 /** @function
  *  @param {http.Server} server */
@@ -89,4 +124,18 @@ function getIpAddresses(req){
         req.socket.remoteAddress ||
         req.connection.socket.remoteAddress;
     return ipAddress;
+}
+
+function logReq(req, res, next){
+    console.log("%s %s %s",req.method, req.url, new Date().toString());
+    next();
+}
+
+function checkCamera(req, res, next){
+    if(!req.query.camera_name) res.status(400).end("provide camera name");
+
+    camConnections.getCamera(req.query.camera_name, function(camera){
+        if(!camera) {res.status(404).send("camera not found. Is it registered already?");}
+        else{next(camera);}
+    });
 }

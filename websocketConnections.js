@@ -227,6 +227,10 @@ function Camera(conn, name, ip) {
     this.name = name;
     this.ip = ip;
     this.clients = new ClientConnections();
+    /** @member {number} - estimated number of people seen by camera */
+    this.peopleCount = 0;
+    /** @member {Buffer} - last heatmap image from camera */
+    this.heatmap = new Buffer(0);
 }
 
 Camera.prototype.sendMessage = function (message) {
