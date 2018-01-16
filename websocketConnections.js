@@ -1,4 +1,6 @@
 var WebSocket = require('ws');
+const STREAMING_COMMAND = "send_frames";
+const STOP_STREAMING_COMMAND = "stop_frames";
  
  /** A class that hold WebSocket clients for a camera
  * @class
@@ -10,25 +12,31 @@ function ClientConnections() {
  * @method
  */
 ClientConnections.prototype.getLength = function(){
+    if(this.clients){
     return this.clients.length;
+    }else{
+        return 0;
+    }
 };
 /**@method
  * @param {WebSocket} conn - client websocket connection to add
  */
-ClientConnections.prototype.add = function (conn) {
-
+ClientConnections.prototype.add = function (conn, cb) {
     this.clients.push(conn);
+    if(cb){ cb();}
     // console.log("client connections:%d", this.clients.length)
 };
 /**@method
  * @param {WebSocket} conn - websocket connection to close
  */
-ClientConnections.prototype.close = function (conn) {
+ClientConnections.prototype.close = function (conn, cb) {
     if(this.clients.length < 1){
         return;
     }
     var indx = this.clients.indexOf(conn);
     this.clients.splice(indx, 1);
+    conn.close();
+    if(cb){cb();}
 };
 
 /**send message to all websockets in the array
@@ -38,7 +46,7 @@ ClientConnections.prototype.close = function (conn) {
 ClientConnections.prototype.sendToAll = function (message) {
     this.clients.forEach(function (client, ind, arr) {
         checkSocketOpen(client, function(){
-            client.send(message);
+            client.send(message,sendCallback);
         });
     });
 };
@@ -118,6 +126,7 @@ CameraConnections.prototype.add = function (conn, name, ip) {
     // defining the callbacks for this camera
     conn.on('message', incomingFromCamera);
     conn.on('close', closingCamera);
+    conn.on('error', handleWsError);
 
     var camera = new Camera(conn, cname, ip);
     this.cameras.push(camera);
@@ -167,7 +176,8 @@ CameraConnections.prototype.addClientToCamera = function (cameraName, clientConn
         // new client Callbacks
         clientConn.on('message', incomingFromClient);
         clientConn.on('close', closingClient);
-        camera.clients.add(clientConn);
+        clientConn.on('error', handleWsError);
+        camera.clients.add(clientConn, function(){camera.checkClients();});
         callback(undefined);
         
         /** Called when a client sent data
@@ -183,7 +193,7 @@ CameraConnections.prototype.addClientToCamera = function (cameraName, clientConn
          * @param {string} message 
          */
         function closingClient(code) {
-            camera.clients.close(clientConn);
+            camera.clients.close(clientConn, function(){camera.checkClients();});
             console.log("Closing client connection for: %s camera. info: %d, %s", camera.name, code);
         }
 
@@ -236,9 +246,21 @@ function Camera(conn, name, ip) {
 Camera.prototype.sendMessage = function (message) {
     var conn = this.conn;
     checkSocketOpen(conn, function(){
-        conn.send(message);
+        conn.send(message,sendCallback);
     });
 };
+
+
+Camera.prototype.checkClients = function (){    
+    if(this.clients.getLength() > 0) {
+        // request the camera to start streaming data
+        this.conn.send(STREAMING_COMMAND,{}, sendCallback);
+    }else{
+        // stop sending camera frames but keep connection
+        this.conn.send(STOP_STREAMING_COMMAND,{}, sendCallback);
+    } 
+}
+
 
 exports.ClientCamera = Camera;
 exports.ClientConnections = ClientConnections;
@@ -256,5 +278,19 @@ function checkSocketOpen(socket, callback){
     }
     if(socket.readyState == WebSocket.OPEN){
         callback();
+    }
+}
+
+function sendCallback(err){
+    if(err){
+        console.error("Error when sending");
+        console.error(err);
+    }
+}
+
+function handleWsError(err){
+    if(err){
+        console.error("Error event");
+        console.error(err);
     }
 }
