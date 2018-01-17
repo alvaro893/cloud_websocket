@@ -46,7 +46,7 @@ ClientConnections.prototype.close = function (conn, cb) {
 ClientConnections.prototype.sendToAll = function (message) {
     this.clients.forEach(function (client, ind, arr) {
         checkSocketOpen(client, function(){
-            client.send(message,sendCallback);
+            client.send(message,sendCallback(client, "client"));
         });
     });
 };
@@ -246,18 +246,19 @@ function Camera(conn, name, ip) {
 Camera.prototype.sendMessage = function (message) {
     var conn = this.conn;
     checkSocketOpen(conn, function(){
-        conn.send(message,sendCallback);
+        conn.send(message,sendCallback(conn, "camera "+this.name));
     });
 };
 
 
-Camera.prototype.checkClients = function (){    
+Camera.prototype.checkClients = function (){
+    var conn = this.conn;
     if(this.clients.getLength() > 0) {
         // request the camera to start streaming data
-        this.conn.send(STREAMING_COMMAND,{}, sendCallback);
+        this.conn.send(STREAMING_COMMAND,{}, sendCallback(conn, this.name + " (sending starting stream command)"));
     }else{
         // stop sending camera frames but keep connection
-        this.conn.send(STOP_STREAMING_COMMAND,{}, sendCallback);
+        this.conn.send(STOP_STREAMING_COMMAND,{}, sendCallback(conn, this.name + " (sending stoping stream command)"));
     } 
 }
 
@@ -281,11 +282,13 @@ function checkSocketOpen(socket, callback){
     }
 }
 
-function sendCallback(err){
-    if(err){
-        console.error("Error when sending");
-        console.error(err);
-    }
+function sendCallback(conn, reasonStr){
+    return function(err){
+        if(err){
+            console.error("Error when sending to " + reasonStr);
+            if(err.code == 'EPIPE'){conn.terminate();}
+        }
+    };
 }
 
 function handleWsError(err){
