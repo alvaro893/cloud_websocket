@@ -11,6 +11,7 @@ var params;
 
 console.log("version 1.0");
 var port = process.env.PORT || process.env.port || process.env.OPENSHIFT_NODEJS_PORT || 8080;
+var camera_port = process.env.CAMERA_PORT || process.env.camera_port || 8080;
 var ip = process.env.OPENSHIFT_NODEJS_IP || process.argv[2] || '0.0.0.0';
 
 var PASSWORD = process.env.WS_PASSWORD;
@@ -19,11 +20,17 @@ var clientDataPath = "/client";
 var camsInfoPath = '/cams';
 var peoplePath = '/people_count';
 var heatmapPath = '/heatmap';
+var lastIpPath = '/ip';
 var camConnections = new WebsocketConnections.CameraConnections();
+var oldIpAddressesObj = {};
 
 /** http server: base */
 const app = express();
+const proxy = express();
+
 app.use(logReq); // logging middleware
+app.use('/cameras', proxy); // set proxy sub application
+
 app.get(camsInfoPath, function(req, res){
     res.send({ cams: camConnections.getInfo(), count: camConnections.count()});
 });
@@ -52,6 +59,39 @@ app.get(heatmapPath, function(req,res){
     checkCamera(req, res, function(camera){
         if(camera.heatmap) res.send(camera.heatmap);
         else res.status(400).send("no heatmap yet");
+    });
+});
+
+app.get(lastIpPath, function(req, res){
+    var cam = req.query.camera_name;
+    var ip = oldIpAddressesObj[cam];
+    if(ip) res.send(ip); else res.status(400).send("camera does not exist");
+});
+
+// sub-app which redirects http requests using the camera name
+proxy.all('/:name/:resource', function(client_req, client_res){
+    var resource = client_req.params.resource;
+    var camera_name = client_req.params.name;
+    checkCameraProxy(camera_name, client_res, function(camera){
+        var strQuery = url.parse(client_req.url).query;
+        var hostname = camera.ip;
+        if( typeof hostname === 'string' ) {
+            hostname = [ hostname ]; //conver to array
+        }
+        var options = {
+            hostname: hostname[0],
+            port:camera_port,
+            path: "/"+resource+"?"+strQuery,
+            method:client_req.method,
+            headers:client_req.headers,
+
+        };            
+        // forware response from camera to client
+        var camera_req = http.request(options, function(cam_response){
+            cam_response.pipe(client_res,{end:true});
+        });
+        // forware body from client data to camera
+        client_req.pipe(camera_req, {end:true});
     });
 });
 const server = http.createServer(app);
@@ -83,6 +123,7 @@ function main(server) {
                 var camera_name = params.camera_name || undefined;
                 var ipAddress = getIpAddresses(upgradeReq);
                 camConnections.add(ws, camera_name, ipAddress);
+                oldIpAddressesObj[camera_name] = ipAddress;
                 break;
             case clientDataPath:  // a client wants to register to a camera
             //case "/":
@@ -134,6 +175,15 @@ function checkCamera(req, res, next){
     if(!req.query.camera_name) res.status(400).end("provide camera name");
 
     camConnections.getCamera(req.query.camera_name, function(camera){
+        if(!camera) {res.status(404).send("camera not found. Is it registered already?");}
+        else{next(camera);}
+    });
+}
+
+function checkCameraProxy(camera_name, res, next){
+    if(!camera_name){ res.status(400).end("provide camera name");}
+
+    camConnections.getCamera(camera_name, function(camera){
         if(!camera) {res.status(404).send("camera not found. Is it registered already?");}
         else{next(camera);}
     });
