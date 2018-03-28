@@ -12,9 +12,7 @@
     "ws": "3.3.3"
   },
   "devDependencies": {
-    "chai": "^3.5.0",
-    "nodemon": "*",
-    "sinon": "^1.17.7"
+    "nodemon": "1.13.0"
   },
   "engine": {
     "node": "*",
