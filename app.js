@@ -78,7 +78,6 @@ proxy.all('/:name/:resource', function(client_req, client_res){
     checkCameraProxy(camera_name, client_res, function(camera){
         var strQuery = url.parse(client_req.url).search || ""; // search is the '?' plus the query
         var hostname = camera.ip;
-
         var options = {
             hostname: hostname,
             port:camera_port,
