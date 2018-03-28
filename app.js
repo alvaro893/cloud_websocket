@@ -11,7 +11,7 @@ var params;
 
 console.log("version 1.0");
 var port = process.env.PORT || process.env.port || process.env.OPENSHIFT_NODEJS_PORT || 8080;
-var camera_port = process.env.CAMERA_PORT || process.env.camera_port || 8080;
+var camera_port = process.env.CAMERA_PORT || process.env.camera_port || 8088;
 var ip = process.env.OPENSHIFT_NODEJS_IP || process.argv[2] || '0.0.0.0';
 
 var PASSWORD = process.env.WS_PASSWORD;
@@ -30,7 +30,10 @@ const proxy = express();
 
 app.use(logReq); // logging middleware
 app.use('/cameras', proxy); // set proxy sub application
+app.set('view engine', 'pug');
 
+app.use(express.static('public'));
+  
 app.get(camsInfoPath, function(req, res){
     res.send({ cams: camConnections.getInfo(), count: camConnections.count()});
 });
@@ -73,27 +76,30 @@ proxy.all('/:name/:resource', function(client_req, client_res){
     var resource = client_req.params.resource;
     var camera_name = client_req.params.name;
     checkCameraProxy(camera_name, client_res, function(camera){
-        var strQuery = url.parse(client_req.url).query;
+        var strQuery = url.parse(client_req.url).search || ""; // search is the '?' plus the query
         var hostname = camera.ip;
-        if( typeof hostname === 'string' ) {
-            hostname = [ hostname ]; //conver to array
-        }
-        var options = {
-            hostname: hostname[0],
-            port:camera_port,
-            path: "/"+resource+"?"+strQuery,
-            method:client_req.method,
-            headers:client_req.headers,
 
+        var options = {
+            hostname: hostname,
+            port:camera_port,
+            path: "/"+resource + strQuery,
+            method:client_req.method,
         };            
-        // forware response from camera to client
-        var camera_req = http.request(options, function(cam_response){
-            cam_response.pipe(client_res,{end:true});
-        });
-        // forware body from client data to camera
-        client_req.pipe(camera_req, {end:true});
+        console.log(options);
+        // forward response from camera to client
+        try{
+            var camera_req = http.request(options, function(cam_response){
+                client_res.writeHead(200, cam_response.headers);
+                cam_response.pipe(client_res,{end:true});
+            });
+            // forward body from client data to camera
+            client_req.pipe(camera_req, {end:true});
+        }catch(err){
+            console.error(err);
+        }
     });
 });
+
 const server = http.createServer(app);
 
 
@@ -163,7 +169,7 @@ function getIpAddresses(req){
         req.connection.remoteAddress || 
         req.socket.remoteAddress ||
         req.connection.socket.remoteAddress;
-    return ipAddress;
+    return ipAddress.match(/(\d+\.\d+\.\d+\.\d+)/)[0];
 }
 
 function logReq(req, res, next){
