@@ -97,20 +97,14 @@ textarea {
    Author's custom styles
    ========================================================================== */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ .command_fail {
+    -webkit-transition: text-shadow 1s;
+    transition: text-shadow 1s;
+}
+command_success {
+    text-shadow: 0px 0px 10px red;
+    text-decoration: underline;
+}
 
 
 /* ==========================================================================

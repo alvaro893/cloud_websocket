@@ -3,18 +3,47 @@ $(document).ready(function(){
     var sizey = 300;
     var image = "cam";
     var currentCam = "RESTAURANT1";
-    
+    setCamera();
+
     refresh_list();
     $('#refresh').on('click', refresh_list);
     $('#cam').on('click', function(){image="cam"; setCamera();});
     $('#mask').on('click', function(){image="mask"; setCamera();});
     $('#heatmap').on('click', function(){image="heatmap"; setCamera();});
-    $('#plus').on('click', function(){sizex +=50; sizey+=50; setCamera();});
-    $('#minus').on('click', function(){sizex -=50; sizey-=50; setCamera();});
+    $('#background').on('click', function(){image="background"; setCamera();});
+    $('#plus').on('click', function(){sizex = 800; sizey = 600; setCamera();});
+    $('#minus').on('click', function(){sizex =400; sizey =300; setCamera();});
+    $('#calibrate').on('click', function(){sendCommand('calibrate', $('#calibrate') );});
+    $('#sync').on('click', function(){sendCommand('sync', $('#sync') );});
+    $('#automax').on('click', function(){sendCommand('automax', $('#automax') );});
+    $('#automin').on('click', function(){sendCommand('automin', $('#automin') );});
+    $('#delay').on('click', function(){
+        sendCommand('delay', $('#delay_input'));
+    });
+    $('#min_temp').on('click', function(){
+        sendCommand('min', $('#min_temp_input'));
+    });
+    $('#max_temp').on('click', function(){
+        sendCommand('max', $('#max_temp_input'));
+    });
     
 
     function setCamera(){
         $("#video_feed").attr("src", "/cameras/"+currentCam+"/"+image+".mjpg?sizex="+sizex+"&sizey="+sizey);
+    }
+
+    function sendCommand(comm, $input){
+        $.ajax({
+            type: 'PUT',
+            url: "/cameras/"+currentCam+"/"+comm, 
+            data: $input.val() || "",
+            contentType: 'text/plain'
+        }).done(function(d) {
+            if($input){$input.css({'background-color': '#89ff89'});}
+          })
+          .fail(function() {
+            if($input){$input.css({'background-color': '#ff9c9c'});}
+          });
     }
 
     function refresh_list(){

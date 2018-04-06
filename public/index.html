@@ -10,13 +10,32 @@
 </head>
 <body>
     <h1>Proxy</h1>
-    <img id="video_feed" src="/cameras/RESTAURANT1/cam.mjpg?sizex=400&sizey=300" alt="cam" />
+    <img id="video_feed" src="" alt="cam" />
+    <div>
+        <h2>Commands</h2>
+        <button id="calibrate">calibrate</button> <br/>
+        <button id="sync">sync</button> <br/>
+        <button id="delay">delay</button> <input type="number" id="delay_input" step="100" min="0"/> <br/>
+        <button id="automin">automin</button>  <br/>
+        <button id="automax">automax</button>  <br/>
+        <button id="min_temp">max temp</button> <input type="number" id="min_temp_input" step="50" min="1"/> <br/>
+        <button id="max_temp">max temp</button> <input type="number" id="max_temp_input" step="50" min="1"/> <br/>
+    </div>
+    <div>
+        <h3>Logs</h3>
+        <textarea id="logs"></textarea>
+        <textarea id="logs"></textarea>
+    </div>
+    <div id="data">
 
+    </div>
+    
     <h1>Cameras </h1>
     <ul id="cameras"></ul>
     <button id="refresh">Refresh</button>
     <button id="cam">Heat-image</button>
     <button id="mask">Mask</button>
+    <button id="background">Background - substraction</button>
     <button id="heatmap">Heatmap</button>
     <button id="plus">+</button>
     <button id="minus">-</button>

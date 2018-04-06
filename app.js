@@ -29,6 +29,7 @@ const app = express();
 const proxy = express();
 
 app.use(logReq); // logging middleware
+app.use(authorization); // basic authorization middleware
 app.use('/cameras', proxy); // set proxy sub application
 app.set('view engine', 'pug');
 
@@ -83,21 +84,24 @@ proxy.all('/:name/:resource', function(client_req, client_res){
             port:camera_port,
             path: "/"+resource + strQuery,
             method:client_req.method,
-        };            
-        console.log(options);
+            headers: client_req.headers
+        };          
         // forward response from camera to client
-        try{
             var camera_req = http.request(options, function(cam_response){
-                client_res.writeHead(200, cam_response.headers);
-                cam_response.pipe(client_res,{end:true});
+                client_res.writeHead(cam_response.statusCode, cam_response.headers);
+                cam_response.pipe(client_res);
             });
+        
+            camera_req.on('error', function(err){
+                console.warn('some error on the camera request:%s', err);
+                client_res.status(404).end();
+            });
+
             // forward body from client data to camera
             client_req.pipe(camera_req, {end:true});
-        }catch(err){
-            console.error(err);
-        }
     });
 });
+
 
 const server = http.createServer(app);
 
@@ -145,6 +149,20 @@ function main(server) {
     });
 
     server.listen(port, ip);
+}
+
+function authorization(req, res, next){
+    // NOTE: this requests an user and a password, it does not check it
+    if(req.path == camsInfoPath) {next(); return;} // TODO: This is for compability, remove in the future
+
+    var auth = req.headers.authorization;
+    if(!auth){
+        res.statusCode = 401;
+        res.setHeader('WWW-Authenticate', 'Basic realm="Unauthorized access fordbiden"');
+        res.end('Provide user and password')
+    }else{
+        next();
+    }
 }
 
 
