@@ -1,8 +1,10 @@
+/* jshint browser: true */
 $(document).ready(function(){
     var sizex = 400;
     var sizey = 300;
     var image = "cam";
     var currentCam = "RESTAURANT1";
+    var currentIp = "0";
     setCamera();
 
     refresh_list();
@@ -13,10 +15,10 @@ $(document).ready(function(){
     $('#background').on('click', function(){image="background"; setCamera();});
     $('#plus').on('click', function(){sizex = 800; sizey = 600; setCamera();});
     $('#minus').on('click', function(){sizex =400; sizey =300; setCamera();});
-    $('#calibrate').on('click', function(){sendCommand('calibrate', $('#calibrate') );});
-    $('#sync').on('click', function(){sendCommand('sync', $('#sync') );});
-    $('#automax').on('click', function(){sendCommand('automax', $('#automax') );});
-    $('#automin').on('click', function(){sendCommand('automin', $('#automin') );});
+    $('#calibrate').on('click', function(){sendCommand('calibrate', $(this) );});
+    $('#sync').on('click', function(){sendCommand('sync',           $(this) );});
+    $('#automax').on('click', function(){sendCommand('automax',     $(this) );});
+    $('#automin').on('click', function(){sendCommand('automin',     $(this) );});
     $('#delay').on('click', function(){
         sendCommand('delay', $('#delay_input'));
     });
@@ -26,10 +28,26 @@ $(document).ready(function(){
     $('#max_temp').on('click', function(){
         sendCommand('max', $('#max_temp_input'));
     });
+    $('#reboot').on('click', function(){
+        sendCommand('reboot', $(this));
+    });
+    $('#update').on('click', function(){
+        sendCommand('update', $(this));
+    });
     
 
     function setCamera(){
-        $("#video_feed").attr("src", "/cameras/"+currentCam+"/"+image+".mjpg?sizex="+sizex+"&sizey="+sizey);
+        var video_feed = document.getElementById("video_feed");
+        video_feed.src = "/img/wait.png";
+        video_feed.addEventListener('error', function imgOnError() {
+            video_feed.src = "/img/error.png";
+        })
+        setTimeout(function(){
+            // video_feed.src = "http://"+currentIp+":8088/"+image+".mjpg?sizex="+sizex+"&sizey="+sizey + "#" + new Date().getTime();
+            video_feed.src = "/cameras/"+currentCam+"/"+image+".mjpg?sizex="+sizex+"&sizey="+sizey + "#" + new Date().getTime();
+            document.getElementById("buildlog").href = "/cameras/"+currentCam+"/build.log";
+            document.getElementById("generallog").href = "/cameras/"+currentCam+"/logs.log";
+        }, 300);
     }
 
     function sendCommand(comm, $input){
@@ -49,11 +67,11 @@ $(document).ready(function(){
     function refresh_list(){
         $("#cameras").empty();
         $.getJSON("/cams", function(data){
-            // var data = {"cams":[{"name":"RESTAURANT1","ip":"10.23.178.138, 192.168.0.59"},{"name":"LOBBY2","ip":"10.23.178.134, 192.168.0.59"},{"name":"LOBBY1","ip":"10.23.178.133, 192.168.0.59"},{"name":"TESTING_CAMERA","ip":"10.23.178.129, 192.168.0.59"},{"name":"GARAGE1","ip":"10.23.178.141, 192.168.0.59"},{"name":"RESTAURANT2","ip":"10.23.178.139, 192.168.0.59"}],"count":6}
+            // var data = {"cams":[{"name":"RESTAURANT1","ip":"10.23.178.134"},{"name":"LOBBY2","ip":"10.23.178.135"},{"name":"LOBBY1","ip":"10.23.178.136"},{"name":"TESTING_CAMERA","ip":"10.23.178.129, 192.168.0.59"},{"name":"GARAGE1","ip":"10.23.178.138"},{"name":"RESTAURANT2","ip":"10.23.178.128"}],"count":6}
             $.each(data.cams, function(i, camera){
                 var item = $("<li>" +camera.name+ ": "+camera.ip+" </li>");
                 item.addClass(camera.name);
-                item.on('click',function(){currentCam = camera.name; setCamera();});
+                item.on('click',function(){currentCam = camera.name; currentIp = camera.ip; setCamera();});
                 item.appendTo($("#cameras"));
             });
         });
