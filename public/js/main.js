@@ -55,12 +55,21 @@ $(document).ready(function(){
             url: "/cameras/"+currentCam+"/"+comm, 
             data: $input.val() || "",
             contentType: 'text/plain'
-        }).done(function(d) {
+        }).done(function() {
             if($input){$input.css({'background-color': '#89ff89'});}
-          })
-          .fail(function() {
-            if($input){$input.css({'background-color': '#ff9c9c'});}
-          });
+            commandFeedback('#89ff89', $input)
+        })
+        .fail(function() {
+            commandFeedback('#ff9c9c', $input);
+        });
+    }
+
+    function commandFeedback(color, $input){
+        var original = $input.css('background-color');
+        $input.css({'background-color': color});
+        setTimeout(function(){
+            $input.css({'background-color': original});
+        }, 1000); 
     }
 
     function refresh_list(){
