@@ -35,7 +35,6 @@ $(document).ready(function(){
         sendCommand('update', $(this));
     });
     
-
     function setCamera(){
         var video_feed = document.getElementById("video_feed");
         video_feed.src = "/img/wait.png";
