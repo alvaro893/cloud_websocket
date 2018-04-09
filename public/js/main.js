@@ -5,9 +5,15 @@ $(document).ready(function(){
     var image = "cam";
     var currentCam = "RESTAURANT1";
     var currentIp = "0";
-    setCamera();
 
-    refresh_list();
+    refresh_list(function(){
+        setTimeout(function(){
+            var aCamera = $('#cameras li').get(0);
+            if(aCamera){
+                currentCam = aCamera.getAttribute('class');  setCamera();
+            }    
+        }, 500);
+    });
     $('#refresh').on('click', refresh_list);
     $('#cam').on('click', function(){image="cam"; setCamera();});
     $('#mask').on('click', function(){image="mask"; setCamera();});
@@ -36,6 +42,11 @@ $(document).ready(function(){
     });
     
     function setCamera(){
+        document.getElementById('camera_name').innerHTML = currentCam;
+        document.getElementById('load').innerHTML =
+        $.get("/cameras/"+currentCam+"/load", function(data){
+            $('#load').html( "Average CPU Load (5 min) " + String(data.split(" ")[1] / 4 * 100) + " %");
+        })
         var video_feed = document.getElementById("video_feed");
         video_feed.src = "/img/wait.png";
         video_feed.addEventListener('error', function imgOnError() {
@@ -46,7 +57,7 @@ $(document).ready(function(){
             video_feed.src = "/cameras/"+currentCam+"/"+image+".mjpg?sizex="+sizex+"&sizey="+sizey + "#" + new Date().getTime();
             document.getElementById("buildlog").href = "/cameras/"+currentCam+"/build.log";
             document.getElementById("generallog").href = "/cameras/"+currentCam+"/logs.log";
-        }, 300);
+        }, 100);
     }
 
     function sendCommand(comm, $input){
@@ -56,8 +67,7 @@ $(document).ready(function(){
             data: $input.val() || "",
             contentType: 'text/plain'
         }).done(function() {
-            if($input){$input.css({'background-color': '#89ff89'});}
-            commandFeedback('#89ff89', $input)
+            commandFeedback('#89ff89', $input);
         })
         .fail(function() {
             commandFeedback('#ff9c9c', $input);
@@ -72,7 +82,7 @@ $(document).ready(function(){
         }, 1000); 
     }
 
-    function refresh_list(){
+    function refresh_list(callback){
         $("#cameras").empty();
         $.getJSON("/cams", function(data){
             // var data = {"cams":[{"name":"RESTAURANT1","ip":"10.23.178.134"},{"name":"LOBBY2","ip":"10.23.178.135"},{"name":"LOBBY1","ip":"10.23.178.136"},{"name":"TESTING_CAMERA","ip":"10.23.178.129, 192.168.0.59"},{"name":"GARAGE1","ip":"10.23.178.138"},{"name":"RESTAURANT2","ip":"10.23.178.128"}],"count":6}
@@ -83,5 +93,6 @@ $(document).ready(function(){
                 item.appendTo($("#cameras"));
             });
         });
+        if(typeof callback === "function"){ callback();}
     }
 });
