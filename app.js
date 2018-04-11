@@ -9,6 +9,7 @@ var url = require('url');
 var http = require('http');
 var params;
 var responsesList = [];
+var lastImpactResponse = {};
 
 console.log("version 1.0");
 var port = process.env.PORT || process.env.port || process.env.OPENSHIFT_NODEJS_PORT || 8080;
@@ -82,6 +83,7 @@ app.post(impactCallbackPath,bodyParser.text(), bodyParser.json(), function(req, 
         return;
     }
     var data = req.body.responses;
+    lastImpactResponse = data;
     if(!data){
         res.status(400).end();
         return;
@@ -98,6 +100,8 @@ app.post(impactCallbackPath,bodyParser.text(), bodyParser.json(), function(req, 
     res.status(200).end();
 });
 
+app.get('/responsesList', bodyParser.json(), (req, res) => res.status(200).json(responsesList));
+app.get('/lastImpactResponse', bodyParser.json(), (req, res) => res.status(200).json(lastImpactResponse));
 app.get(impactCallbackPath, bodyParser.json(), function(req, res){
 
     var requestId = req.query.requestId;
