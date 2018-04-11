@@ -76,11 +76,8 @@ app.get(lastIpPath, function(req, res){
 });
 
 app.post(impactCallbackPath,bodyParser.text(), bodyParser.json(), function(req, res){
-    // console.log(responsesList);
-    console.log(req.headers)
-    console.log(req.body)
     // return something if not json. needed to register server
-    if(req.headers['content-type'] != 'application/json'){
+    if( req.headers['content-type'].search('application/json') ){
         res.status(200).end();
         return;
     }
