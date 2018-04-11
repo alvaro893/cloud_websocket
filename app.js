@@ -74,7 +74,13 @@ app.get(lastIpPath, function(req, res){
     if(ip) res.send(ip); else res.status(400).send("camera does not exist");
 });
 
-app.post(impactCallbackPath, bodyParser.json(), function(req, res){
+app.post(impactCallbackPath,bodyParser.text(), bodyParser.json(), function(req, res){
+    // console.log(responsesList);
+    // return something if not json. needed to register server
+    if(req.headers['content-type'] != 'application/json'){
+        res.status(200).end();
+        return;
+    }
     var data = req.body.responses;
     if(!data){
         res.status(400).end();
@@ -93,7 +99,7 @@ app.post(impactCallbackPath, bodyParser.json(), function(req, res){
 });
 
 app.get(impactCallbackPath, bodyParser.json(), function(req, res){
-    // console.log(responsesList);
+
     var requestId = req.query.requestId;
     var response = responsesList.find(x => x.requestId == requestId);
     if(response){
@@ -189,7 +195,7 @@ function main(server) {
 
 function authorization(req, res, next){
     // NOTE: this requests an user and a password, it does not check it
-    if(req.path == camsInfoPath || req.path == impactCallbackPath) {next(); return;} // TODO: This is for compability, remove in the future
+    if(req.path == camsInfoPath) {next(); return;} // TODO: This is for compability, remove in the future
 
     var auth = req.headers.authorization;
     if(!auth){
