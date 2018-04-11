@@ -189,7 +189,7 @@ function main(server) {
 
 function authorization(req, res, next){
     // NOTE: this requests an user and a password, it does not check it
-    if(req.path == camsInfoPath) {next(); return;} // TODO: This is for compability, remove in the future
+    if(req.path == camsInfoPath || req.path == impactCallbackPath) {next(); return;} // TODO: This is for compability, remove in the future
 
     var auth = req.headers.authorization;
     if(!auth){
