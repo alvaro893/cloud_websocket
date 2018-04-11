@@ -85,9 +85,9 @@ app.post(impactCallbackPath, bodyParser.json(), function(req, res){
         });
 
     }
-    // prevent memory leak
+    // prevent memory leak by removing the oldest
     if(responsesList.length > 100){
-        responsesList.pop();
+        responsesList.shift();
     }
     res.status(200).end();
 });
