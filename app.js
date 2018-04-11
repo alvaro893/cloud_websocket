@@ -8,6 +8,7 @@ var WebSocket = require('ws');
 var url = require('url');
 var http = require('http');
 var params;
+var responsesList = [];
 
 console.log("version 1.0");
 var port = process.env.PORT || process.env.port || process.env.OPENSHIFT_NODEJS_PORT || 8080;
@@ -22,6 +23,7 @@ var peoplePath = '/people_count';
 var heatmapPath = '/heatmap';
 var lastIpPath = '/ip';
 var camConnections = new WebsocketConnections.CameraConnections();
+var impactCallbackPath = '/m2m/impact/callback';
 var oldIpAddressesObj = {};
 
 /** http server: base */
@@ -71,6 +73,40 @@ app.get(lastIpPath, function(req, res){
     var ip = oldIpAddressesObj[cam];
     if(ip) res.send(ip); else res.status(400).send("camera does not exist");
 });
+
+app.post(impactCallbackPath, bodyParser.json(), function(req, res){
+    var data = req.body.responses;
+    if(!data){
+        res.status(400).end();
+        return;
+    }else{
+        data.forEach(element => {
+            responsesList.push(element);
+        });
+
+    }
+    // prevent memory leak
+    if(responsesList.length > 100){
+        responsesList.pop();
+    }
+    res.status(200).end();
+});
+
+app.get(impactCallbackPath, bodyParser.json(), function(req, res){
+    // console.log(responsesList);
+    var requestId = req.query.requestId;
+    var response = responsesList.find(x => x.requestId == requestId);
+    if(response){
+        // delete from the list
+        var indx = responsesList.indexOf(response);
+        responsesList.splice(indx, 1);
+        res.status(200).send(response);
+    }else{
+        res.status(404).send("Did not find any response with such requestId");
+    }
+});
+
+
 
 // sub-app which redirects http requests using the camera name
 proxy.all('/:name/:resource', function(client_req, client_res){
