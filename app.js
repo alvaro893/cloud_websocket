@@ -75,6 +75,14 @@ app.get(lastIpPath, function(req, res){
     if(ip) res.send(ip); else res.status(400).send("camera does not exist");
 });
 
+app.get("/statistics", function(req, res){
+    camConnections.cameras.forEach((val, index) => {
+        var camera = val;
+        res.write(camera.name + " , " + camera.ip + ", clients: " + String(camera.clients.getLength()) + "\n");
+    });
+    res.status(200).end();
+});
+
 app.post(impactCallbackPath,bodyParser.text(), bodyParser.json(), function(req, res){
     // return something if not json. needed to register server
     if( req.headers['content-type'].search('application/json') ){

@@ -1,6 +1,7 @@
 *** Variables ***
 ${password}                30022
 ${url}                     localhost:8080
+${url_auth}                user:passw@${url}
 ${camera_name_param}           camera_name=
 ${url_params}              ?pass=${password}
 ${uri_client}              ws://${url}/client${url_params}&${camera_name_param}
@@ -59,6 +60,11 @@ Get Cameras
     ${body} = 	Get Response Body 	
     Should Start With 	${body} 	{
     Log Json  ${body}
+Get Statistics
+    Create Http Context 	${url_auth}   http
+	GET 	/statistics
+    ${body} = 	Get Response Body
+    Log ${body}
 Number Of Cameras Should Be
     [arguments]   ${n}
     Create Http Context 	${url}   http
@@ -171,3 +177,4 @@ several cameras with several clients, bidirectional communication
 
 Http Server
     Get Cameras
+    Get Statistics

@@ -283,3 +283,10 @@ command_success {
         page-break-after: avoid;
     }
 }
+
+
+/* Add some margin to buttons */
+.marcontrol {
+    margin: 4px;
+    padding: 2px;
+}

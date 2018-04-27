@@ -2,24 +2,40 @@
 $(document).ready(function(){
     var sizex = 400;
     var sizey = 300;
-    var image = "cam";
-    var currentCam = "RESTAURANT1";
+    var image = "color";
+    var currentCam = "";
     var currentIp = "0";
+    var isCameraActive = false;
 
+    // get the first camera
     refresh_list(function(){
         setTimeout(function(){
             var aCamera = $('#cameras li').get(0);
             if(aCamera){
-                currentCam = aCamera.getAttribute('class');  setCamera();
+                currentCam = aCamera.getAttribute('id');  setCamera();
             }    
         }, 500);
     });
+
+    // refresh data
+    window.setInterval(function(){
+        if(isCameraActive){
+            update_telemetry();
+            update_data();
+        }
+    }, 2000);
+    // refresh cameras
+    window.setInterval(function(){ refresh_list();}, 10000);
+
+
+    //buttons
     $('#refresh').on('click', refresh_list);
     $('#cam').on('click', function(){image="cam"; setCamera();});
+    $('#color').on('click', function(){image="color"; setCamera();});
     $('#mask').on('click', function(){image="mask"; setCamera();});
     $('#heatmap').on('click', function(){image="heatmap"; setCamera();});
     $('#background').on('click', function(){image="background"; setCamera();});
-    $('#plus').on('click', function(){sizex = 800; sizey = 600; setCamera();});
+    $('#plus').on('click', function(){sizex = 700; sizey = 500; setCamera();});
     $('#minus').on('click', function(){sizex =400; sizey =300; setCamera();});
     $('#calibrate').on('click', function(){sendCommand('calibrate', $(this) );});
     $('#sync').on('click', function(){sendCommand('sync',           $(this) );});
@@ -45,19 +61,21 @@ $(document).ready(function(){
         document.getElementById('camera_name').innerHTML = currentCam;
         document.getElementById('load').innerHTML =
         $.get("/cameras/"+currentCam+"/load", function(data){
-            $('#load').html( "Average CPU Load (5 min) " + String(data.split(" ")[1] / 4 * 100) + " %");
+            $('#load').html( "Average CPU Load (5 min) " + (data.split(" ")[1] / 4 * 100).toFixed(2) + " %");
         })
         var video_feed = document.getElementById("video_feed");
         video_feed.src = "/img/wait.png";
         video_feed.addEventListener('error', function imgOnError() {
             video_feed.src = "/img/error.png";
-        })
+            isCameraActive = false;
+        });
         setTimeout(function(){
             // video_feed.src = "http://"+currentIp+":8088/"+image+".mjpg?sizex="+sizex+"&sizey="+sizey + "#" + new Date().getTime();
             video_feed.src = "/cameras/"+currentCam+"/"+image+".mjpg?sizex="+sizex+"&sizey="+sizey + "#" + new Date().getTime();
             document.getElementById("buildlog").href = "/cameras/"+currentCam+"/build.log";
             document.getElementById("generallog").href = "/cameras/"+currentCam+"/logs.log";
         }, 100);
+        isCameraActive = true;
     }
 
     function sendCommand(comm, $input){
@@ -87,12 +105,39 @@ $(document).ready(function(){
         $.getJSON("/cams", function(data){
             // var data = {"cams":[{"name":"RESTAURANT1","ip":"10.23.178.134"},{"name":"LOBBY2","ip":"10.23.178.135"},{"name":"LOBBY1","ip":"10.23.178.136"},{"name":"TESTING_CAMERA","ip":"10.23.178.129, 192.168.0.59"},{"name":"GARAGE1","ip":"10.23.178.138"},{"name":"RESTAURANT2","ip":"10.23.178.128"}],"count":6}
             $.each(data.cams, function(i, camera){
-                var item = $("<li>" +camera.name+ ": "+camera.ip+" </li>");
-                item.addClass(camera.name);
+                var item = $('<li>' +camera.name+ ": "+camera.ip+" </li>");
+                item.attr({id: camera.name});
+                item.addClass('list-group-item');
                 item.on('click',function(){currentCam = camera.name; currentIp = camera.ip; setCamera();});
                 item.appendTo($("#cameras"));
             });
         });
         if(typeof callback === "function"){ callback();}
+    }
+
+    function update_telemetry(){
+        $.getJSON("/cameras/"+currentCam+"/telemetry", function(telemetry){
+            $.each(telemetry, function(key, value) {
+                switch(key){
+                    case  "center_temp": value = value / 100 + "&deg;C"; break;
+                }
+                var element = document.getElementById("tel_"+key);
+                if(element){
+                    element.innerHTML = value;
+                }
+            })
+        });
+    }
+
+    function update_data(){
+        $.getJSON("/cameras/"+currentCam+"/analysis", function(analysis){
+            $.each(analysis, function(key, value) {
+                var element = document.getElementById("analysis_"+key);
+                if(element){
+                    element.innerHTML = value;
+                }
+            });
+
+        });
     }
 });

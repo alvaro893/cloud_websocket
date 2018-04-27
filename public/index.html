@@ -1,54 +1,146 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="x-ua-compatible" content="ie=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Thermal Cameras</title>
+
 <link rel="stylesheet" href="css/normalize.css">
 <link rel="stylesheet" href="css/main.css">
+<!-- Bootstrap CSS -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
 </head>
 <body>
-    <h1>Proxy</h1>
-    <h2 id="camera_name"></h2>
-    <img id="video_feed" src="" alt="cam" />
-    <p id="load">load: </p>
-    <div>
-        <h2>Commands</h2>
-        <button id="calibrate">calibrate</button> <br/>
-        <button id="sync">sync</button> <br/>
-        <button id="delay">delay</button> <input type="number" id="delay_input" step="100" min="0"/> <br/>
-        <button id="automin">automin</button>  <br/>
-        <button id="automax">automax</button>  <br/>
-        <button id="min_temp">min temp</button> <input type="number" id="min_temp_input" step="50" min="1"/> <br/>
-        <button id="max_temp">max temp</button> <input type="number" id="max_temp_input" step="50" min="1"/> <br/>
-        <button id="reboot">Reboot</button>
-        <button id="update">Update</button>
+    <section class="jumbotron">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <h2 id="camera_name" class="jumbotron-heading"></h2>
+                <img id="video_feed" src="" alt="cam" />
+                <p id="load">load: </p>
+                <div>
+                    <h4>Image modes</h4>
+                    <div class="row">
+                        <button id="color" class="col-md-3 btn marcontrol">color-image</button>
+                        <button id="cam" class="col-md-3 btn marcontrol">Heat-image</button>
+                        <button id="mask" class="col-md-3 btn marcontrol">Mask</button>
+                    </div>
+                    <div class="row">
+                        <button id="background" class="col-md-3 btn marcontrol">Background-substraction</button>
+                        <button id="heatmap" class="col-md-3 btn marcontrol">Heatmap</button>
+                    </div>
+                    <div class="row">
+                        <button id="plus" class="col-md-3 btn marcontrol">+</button>
+                        <button id="minus" class="col-md-3 btn marcontrol">-</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Command section -->
+            <div class="col-md-4">
+                <h3 class="jumbotron-heading">Commands</h2>
+                <div class="row">
+                    <button id="calibrate" class="col-4 btn marcontrol">calibrate</button>
+                </div>
+                <div class="row">
+                    <button id="sync" class="col-4 btn marcontrol">sync</button> 
+                </div>
+                <div class="row">
+                    <button id="delay" class="col-4 btn marcontrol">delay</button>
+                    <input type="number" id="delay_input"  class="col-4 marcontrol" step="100" min="1"/>
+                    <span id="tel_frame_delay" class="col-3 marcontrol">1000</span>
+                </div>
+                <div class="row">
+                    <button id="automin" class="col-4 btn marcontrol">automin</button>
+                </div>
+                <div class="row">
+                    <button id="automax" class="col-4 btn marcontrol">automax</button> 
+                </div>
+                <div class="row">
+                    <button id="min_temp" class="col-4 btn marcontrol">min temp</button>
+                    <input type="number" id="min_temp_input"  class="col-4 marcontrol" step="50" min="1"/>
+                    <span id="tel_raw_min_set" class="col-3 marcontrol">-</span>
+                </div>
+                <div class="row">
+                    <button id="max_temp" class="col-4 btn marcontrol" >max temp</button>
+                    <input type="number" id="max_temp_input"  class="col-4 marcontrol" step="50" min="1"/>
+                    <span id="tel_raw_max_set" class="col-3 marcontrol">-</span>
+                </div>
+                <div class="row">
+                    <button id="reboot" class="col-4 btn marcontrol">Reboot</button>
+                    <button id="update" class="col-4 btn marcontrol" >Update</button>
+                </div>
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-md-3">
+                <h3 class="jumbotron-heading">Logs</h3>
+                <a id="buildlog" href="#"  target="_blank">build.log</a> <br>
+                <a id="generallog" href="#" target="_blank" >general.log</a>
+            </div>
+            <div id="data" class="col-md-4">
+                <h3 class="jumbotron-heading">Telemetry</h3>
+                <div class="row">
+                    <label for="tel_time_counter" class="col-8 ">Time stamp</label>
+                    <span id="tel_time_counter" class="col-3 ">-</span>
+                </div>
+                <div class="row">
+                    <label for="tel_frame_counter" class="col-8">Frame counter</label>
+                    <span id="tel_frame_counter" class="col-3">-</span>
+                </div>
+                <div class="row">
+                    <label for="tel_raw_max" class="col-8 ">Max Raw Temperature</label>
+                    <span id="tel_raw_max" class="col-3 ">-</span>
+                </div>
+                <div class="row">
+                    <label for="tel_raw_min" class="col-8 ">Min Raw Temperature</label>
+                    <span id="tel_raw_min" class="col-3 ">-</span>
+                </div>
+                <div class="row">
+                    <label for="tel_discard_packets" class="col-8 ">Lost Packets</label>
+                    <span id="tel_discard_packets" class="col-3 ">-</span>
+                </div>
+                <div class="row">
+                    <label for="tel_center_temp" class="col-8 ">Absolute Temperature</label>
+                    <span id="tel_center_temp" class="col-3 ">-</span>
+                </div>
+                <h3 class="jumbotron-heading">Data</h3>
+                <div class="row">
+                    <label for="analysis_people_count" class="col-8 ">People counter</label>
+                    <span id="analysis_people_count" class="col-3 ">-</span>
+                </div>
+                <div class="row">
+                    <label for="analysis_movement_detection" class="col-8 ">Movement Detected</label>
+                    <span id="analysis_movement_detection" class="col-3 ">false</span>
+                </div>
+                <div class="row">
+                    <label for="analysis_fire_detection" class="col-8 ">Fire Hazard Detected</label>
+                    <span id="analysis_fire_detection" class="col-3 ">false</span>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <h3 class="jumbotron-heading">Camera list</h3>
+                <ul id="cameras" class="list-group"></ul>
+                <br>
+                <button id="refresh" class="btn">Refresh</button>
+            </div>
+        </div>
     </div>
-    <div>
-        <h3>Logs</h3>
-        <a id="buildlog" href="#"  target="_blank">build.log</a> <br>
-        <a id="generallog" href="#" target="_blank" >general.log</a>
-    </div>
-    <div id="data">
-
-    </div>
+    </section>
     
-    <h1>Cameras </h1>
-    <ul id="cameras"></ul>
-    <button id="refresh">Refresh</button>
-    <button id="cam">Heat-image</button>
-    <button id="mask">Mask</button>
-    <button id="background">Background - substraction</button>
-    <button id="heatmap">Heatmap</button>
-    <button id="plus">+</button>
-    <button id="minus">-</button>
+
+   
 
 
     <!-- scripts -->
     <script src="js/vendor/modernizr-3.5.0.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
     <script>window.jQuery || document.write('<script src="js/vendor/jquery-3.2.1.min.js"><\/script>')</script>
+    <!-- bootstrap -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js" integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script>
+    <!-- files -->
     <script src="js/plugins.js"></script>
     <script src="js/main.js"></script>
 </body>

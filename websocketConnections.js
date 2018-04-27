@@ -285,7 +285,7 @@ function checkSocketOpen(socket, callback){
 function sendCallback(conn, reasonStr){
     return function(err){
         if(err){
-            console.error("Error when sending to " + reasonStr);
+            console.error("Error when sending to " + reasonStr + ", error code: " + err.code);
             if(err.code == 'EPIPE'){conn.terminate();}
         }
     };
