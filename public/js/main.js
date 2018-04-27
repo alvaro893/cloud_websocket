@@ -50,11 +50,21 @@ $(document).ready(function(){
     $('#max_temp').on('click', function(){
         sendCommand('max', $('#max_temp_input'));
     });
+    $('#min_human_temp').on('click', function(){
+        sendCommand('min_human_temperature', $('#min_human_temp_input'))
+    });
+    $('#max_human_temp').on('click', function(){
+        sendCommand('max_human_temperature', $('#max_human_temp_input'))
+    });
     $('#reboot').on('click', function(){
-        sendCommand('reboot', $(this));
+        if(confirm("Are you SURE?")){
+            sendCommand('reboot', $(this));
+        }
     });
     $('#update').on('click', function(){
-        sendCommand('update', $(this));
+        if(confirm("Are you SURE?")){
+            sendCommand('update', $(this));
+        }
     });
     
     function setCamera(){
@@ -69,12 +79,21 @@ $(document).ready(function(){
             video_feed.src = "/img/error.png";
             isCameraActive = false;
         });
+        // set video url and logs
         setTimeout(function(){
             // video_feed.src = "http://"+currentIp+":8088/"+image+".mjpg?sizex="+sizex+"&sizey="+sizey + "#" + new Date().getTime();
             video_feed.src = "/cameras/"+currentCam+"/"+image+".mjpg?sizex="+sizex+"&sizey="+sizey + "#" + new Date().getTime();
             document.getElementById("buildlog").href = "/cameras/"+currentCam+"/build.log";
             document.getElementById("generallog").href = "/cameras/"+currentCam+"/logs.log";
         }, 100);
+        // copy telemetry to fields
+        setTimeout(function(){
+            $('#delay_input').val($("#tel_frame_delay").html());
+            $('#min_temp_input').val($("#tel_raw_min_set").html());
+            $('#max_temp_input').val($("#tel_raw_max_set").html());
+            $('#min_human_temp_input').val($("#tel_min_human_temp").html());
+            $('#max_human_temp_input').val($("#tel_max_human_temp").html());
+        }, 2000);
         isCameraActive = true;
     }
 
@@ -119,7 +138,14 @@ $(document).ready(function(){
         $.getJSON("/cameras/"+currentCam+"/telemetry", function(telemetry){
             $.each(telemetry, function(key, value) {
                 switch(key){
-                    case  "center_temp": value = value / 100 + "&deg;C"; break;
+                    case "center_temp": value = value / 100 + "&deg;C"; break;
+                    case "coldest_temp": value = value / 100 + "&deg;C"; break;
+                    case "hottest_temp": value = value / 100 + "&deg;C"; break;
+                    case "agc":{
+                     $("#min_auto_set").html((value & 1) == true);
+                     $("#max_auto_set").html((value >> 1) == true);
+                      break;
+                    }
                 }
                 var element = document.getElementById("tel_"+key);
                 if(element){

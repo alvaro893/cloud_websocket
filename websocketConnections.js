@@ -46,7 +46,7 @@ ClientConnections.prototype.close = function (conn, cb) {
 ClientConnections.prototype.sendToAll = function (message) {
     this.clients.forEach(function (client, ind, arr) {
         checkSocketOpen(client, function(){
-            client.send(message,sendCallback(client, "client"));
+            client.send(message,sendCallback(client, "sending to client " + ind + " (ClientConnections.sendToAll)"));
         });
     });
 };

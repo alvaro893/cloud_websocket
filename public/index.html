@@ -22,12 +22,12 @@
                 <div>
                     <h4>Image modes</h4>
                     <div class="row">
-                        <button id="color" class="col-md-3 btn marcontrol">color-image</button>
-                        <button id="cam" class="col-md-3 btn marcontrol">Heat-image</button>
-                        <button id="mask" class="col-md-3 btn marcontrol">Mask</button>
+                        <button id="color" class="col-md-3 btn marcontrol">Color</button>
+                        <button id="cam" class="col-md-3 btn marcontrol">Grayscale</button>
+                        <button id="mask" class="col-md-3 btn marcontrol">Heat Detection</button>
                     </div>
                     <div class="row">
-                        <button id="background" class="col-md-3 btn marcontrol">Background-substraction</button>
+                        <button id="background" class="col-md-3 btn marcontrol">Movement Detection</button>
                         <button id="heatmap" class="col-md-3 btn marcontrol">Heatmap</button>
                     </div>
                     <div class="row">
@@ -50,22 +50,37 @@
                     <input type="number" id="delay_input"  class="col-4 marcontrol" step="100" min="1"/>
                     <span id="tel_frame_delay" class="col-3 marcontrol">1000</span>
                 </div>
+                <h6>Original Sensor Raw Temperature (x100)</h6>
                 <div class="row">
-                    <button id="automin" class="col-4 btn marcontrol">automin</button>
+                    <button id="automin"       class="col-4 btn marcontrol">Auto Min</button>
+                    <span   id="min_auto_set"  class="col-3 marcontrol">-</span>
                 </div>
                 <div class="row">
-                    <button id="automax" class="col-4 btn marcontrol">automax</button> 
+                    <button id="automax"      class="col-4 btn marcontrol">Auto Max</button> 
+                    <span   id="max_auto_set" class="col-4 marcontrol">-</span>
                 </div>
                 <div class="row">
-                    <button id="min_temp" class="col-4 btn marcontrol">min temp</button>
+                    <button              id="min_temp"        class="col-4 btn marcontrol">Min Temp</button>
                     <input type="number" id="min_temp_input"  class="col-4 marcontrol" step="50" min="1"/>
-                    <span id="tel_raw_min_set" class="col-3 marcontrol">-</span>
+                    <span                id="tel_raw_min_set" class="col-3 marcontrol">-</span>
                 </div>
                 <div class="row">
-                    <button id="max_temp" class="col-4 btn marcontrol" >max temp</button>
+                    <button              id="max_temp" class="col-4 btn marcontrol" >Max Temp</button>
                     <input type="number" id="max_temp_input"  class="col-4 marcontrol" step="50" min="1"/>
-                    <span id="tel_raw_max_set" class="col-3 marcontrol">-</span>
+                    <span                id="tel_raw_max_set" class="col-3 marcontrol">-</span>
                 </div>
+                <h6>Range of human detection (x100)</h6>
+                <div class="row">
+                    <button id="min_human_temp" class="col-4 btn marcontrol">Min Temp</button>
+                    <input type="number" id="min_human_temp_input"  class="col-4 marcontrol" step="50" min="1"/>
+                    <span id="tel_min_human_temp" class="col-3 marcontrol">-</span>
+                </div>
+                <div class="row">
+                    <button id="max_human_temp" class="col-4 btn marcontrol" >Max Temp</button>
+                    <input type="number" id="max_human_temp_input"  class="col-4 marcontrol" step="50" min="1"/>
+                    <span id="tel_max_human_temp" class="col-3 marcontrol">-</span>
+                </div>
+                <h6>RPI commands</h6>
                 <div class="row">
                     <button id="reboot" class="col-4 btn marcontrol">Reboot</button>
                     <button id="update" class="col-4 btn marcontrol" >Update</button>
@@ -75,10 +90,26 @@
         <br>
         <div class="row">
             <div class="col-md-3">
+                <!-- Data section -->
+                <h3 class="jumbotron-heading">Data</h3>
+                <div class="row">
+                    <label for="analysis_people_count" class="col-8 ">People counter</label>
+                    <span id="analysis_people_count" class="col-3 ">-</span>
+                </div>
+                <div class="row">
+                    <label for="analysis_movement_detection" class="col-8 ">Movement Detected</label>
+                    <span id="analysis_movement_detection" class="col-3 ">false</span>
+                </div>
+                <div class="row">
+                    <label for="analysis_fire_detection" class="col-8 ">Fire Hazard Detected</label>
+                    <span id="analysis_fire_detection" class="col-3 ">false</span>
+                </div>
+                <!-- Logs -->
                 <h3 class="jumbotron-heading">Logs</h3>
                 <a id="buildlog" href="#"  target="_blank">build.log</a> <br>
                 <a id="generallog" href="#" target="_blank" >general.log</a>
             </div>
+            <!-- Telemetry section -->
             <div id="data" class="col-md-4">
                 <h3 class="jumbotron-heading">Telemetry</h3>
                 <div class="row">
@@ -102,22 +133,18 @@
                     <span id="tel_discard_packets" class="col-3 ">-</span>
                 </div>
                 <div class="row">
-                    <label for="tel_center_temp" class="col-8 ">Absolute Temperature</label>
+                    <label for="tel_center_temp" class="col-8 ">Average Center Temperature</label>
                     <span id="tel_center_temp" class="col-3 ">-</span>
                 </div>
-                <h3 class="jumbotron-heading">Data</h3>
                 <div class="row">
-                    <label for="analysis_people_count" class="col-8 ">People counter</label>
-                    <span id="analysis_people_count" class="col-3 ">-</span>
+                    <label for="tel_coldest_temp" class="col-8 ">Average Cold Temperature</label>
+                    <span id="tel_coldest_temp" class="col-3 ">-</span>
                 </div>
                 <div class="row">
-                    <label for="analysis_movement_detection" class="col-8 ">Movement Detected</label>
-                    <span id="analysis_movement_detection" class="col-3 ">false</span>
+                    <label for="tel_hottest_temp" class="col-8 ">Average Hot Temperature</label>
+                    <span id="tel_hottest_temp" class="col-3 ">-</span>
                 </div>
-                <div class="row">
-                    <label for="analysis_fire_detection" class="col-8 ">Fire Hazard Detected</label>
-                    <span id="analysis_fire_detection" class="col-3 ">false</span>
-                </div>
+                
             </div>
             <div class="col-md-5">
                 <h3 class="jumbotron-heading">Camera list</h3>
