@@ -53,8 +53,8 @@ class ClientConnections{
             if (client.readyState === WebSocket.OPEN) {
                 client.send(message, (err) => {
                     if (err) {
-                        console.error("Error sending to client "+ ind +" from camera " + cameraName +". Terminating client...");
-                        client.terminate();
+                        console.error("Error sending to client "+ ind +" from camera " + cameraName +". Closing client...");
+                        // client.terminate();
                         this.close(client);
                         this.clientErrors++;
                     }
