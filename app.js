@@ -3,29 +3,31 @@ require('console-stamp')(console, 'dd.mm HH:MM:ss.l'); // formats the console ou
 const express = require('express');
 const bodyParser = require('body-parser');
 //const fs = require('fs');
-var WebsocketConnections = require('./websocketConnections');
-var WebSocket = require('ws');
-var url = require('url');
-var http = require('http');
-var params;
-var responsesList = [];
+const WebsocketConnections = require('./websocketConnections');
+const WebSocket = require('ws');
+const url = require('url');
+const http = require('http');
+
+const responsesList = [];
 var lastImpactResponse = {};
+var statistics_wss_clients = 0;
+var wss;
 
 console.log("version 1.0");
-var port = process.env.PORT || process.env.port || process.env.OPENSHIFT_NODEJS_PORT || 8080;
-var camera_port = process.env.CAMERA_PORT || process.env.camera_port || 8088;
-var ip = process.env.OPENSHIFT_NODEJS_IP || process.argv[2] || '0.0.0.0';
+const port = process.env.PORT || process.env.port || process.env.OPENSHIFT_NODEJS_PORT || 8080;
+const camera_port = process.env.CAMERA_PORT || process.env.camera_port || 8088;
+const ip = process.env.OPENSHIFT_NODEJS_IP || process.argv[2] || '0.0.0.0';
 
-var PASSWORD = process.env.WS_PASSWORD;
-var camDataPath = "/camera";
-var clientDataPath = "/client";
-var camsInfoPath = '/cams';
-var peoplePath = '/people_count';
-var heatmapPath = '/heatmap';
-var lastIpPath = '/ip';
-var camConnections = new WebsocketConnections.CameraConnections();
-var impactCallbackPath = '/m2m/impact/callback';
-var oldIpAddressesObj = {};
+const PASSWORD = process.env.WS_PASSWORD;
+const camDataPath = "/camera";
+const clientDataPath = "/client";
+const camsInfoPath = '/cams';
+const peoplePath = '/people_count';
+const heatmapPath = '/heatmap';
+const lastIpPath = '/ip';
+const camConnections = new WebsocketConnections.CameraConnections();
+const impactCallbackPath = '/m2m/impact/callback';
+const oldIpAddressesObj = {};
 
 /** http server: base */
 const app = express();
@@ -76,10 +78,15 @@ app.get(lastIpPath, function(req, res){
 });
 
 app.get("/statistics", function(req, res){
-    camConnections.cameras.forEach((val, index) => {
+    var count = 0;
+    if(wss){
+        res.write("WebSocket Server clients: " + wss.clients.size + "\n");
+    }
+    camConnections.cameras.forEach((val) => {
         var camera = val;
-        res.write(index + "." + camera.name + " , " + camera.ip + ", clients: " + String(camera.clients.getLength()));
-        res.write(", Client errors: " + camera.clients.clientErrors + "\n");
+        res.write(count + "." + camera.name + " , " + camera.ip + ", clients: " + camera._clients.size);
+        res.write(", Client errors: " + camera.clientErrors + "\n");
+        count++;
     });
     res.status(200).end();
 });
@@ -167,30 +174,31 @@ main(server);
  *  @param {http.Server} server */
 function main(server) {
      /** websocket server extends the http server */
-    var wss = new WebSocket.Server({
+    wss = new WebSocket.Server({
         verifyClient: verifyClient,
-        server: server
+        server: server,
+        perMessageDeflate: false
     });
 
     console.log("running on %s:%d", ip, port);
 
     wss.on('connection', function connection(ws, upgradeReq) {
-        var parsedUrl = url.parse(upgradeReq.url);
+        var parsedUrl = url.parse(upgradeReq.url, true);
         var path = parsedUrl.pathname;
-        var count = camConnections.getClientCount()
+        var query = parsedUrl.query;
         var ip = getIpAddresses(upgradeReq);
-        console.log("new WS %s, ip: %s, number of clients: %d", upgradeReq.url, ip , count);    
+        var camera_name;
+        console.log("new WS %s, ip: %s", upgradeReq.url, ip);    
 
         switch (path) {
             case camDataPath:  // a camera wants to register
-                var camera_name = params.camera_name || undefined;
+                camera_name = query.camera_name || undefined;
                 var ipAddress = getIpAddresses(upgradeReq);
                 camConnections.add(ws, camera_name, ipAddress);
                 oldIpAddressesObj[camera_name] = ipAddress;
                 break;
             case clientDataPath:  // a client wants to register to a camera
-            //case "/":
-                var camera_name = params.camera_name || "camera0";
+                camera_name = query.camera_name || "camera0";
                 camConnections.addClientToCamera(camera_name, ws, function(err){
                     if(err){ws.terminate();}         
                 });
@@ -224,9 +232,9 @@ function verifyClient(info) {
     var acceptHandshake = false;
     var ip = info.req.connection.remoteAddress;
     var clientUrl = url.parse(info.req.url, true);
-    params = clientUrl.query;
+    var query = clientUrl.query;
 
-    acceptHandshake = params.pass == PASSWORD;
+    acceptHandshake = query.pass == PASSWORD;
 
     if (!acceptHandshake) {
         console.log("client rejected: no valid password, use 'pass' parameter in the handshake please");

@@ -3,115 +3,34 @@ var WebSocket = require('ws');
 const STREAMING_COMMAND = "send_frames";
 const STOP_STREAMING_COMMAND = "stop_frames";
 
-/** A class that holds WebSocket clients for a camera */
-class ClientConnections{
-    constructor(){
-        this.clients = [];
-        this.clientErrors = 0;
-    }
 
-    /** Lenght of the internal array of clients */
-    getLength() {
-        if (this.clients) {
-            return this.clients.length;
-        } else {
-            return 0;
-        }
-    }
-
-    /**
-     * 
-     * @param {WebSocket} conn - client websocket connection to add 
-     */
-    add(conn) {
-        this.clients.push(conn);
-        // console.log("client connections:%d", this.clients.length)
-    }
-
-    /**
-     * 
-     * @param {WebSocket} conn 
-     * @param {function} cb 
-     */
-    close(conn) {
-        if (this.clients.length < 1) {
-            return;
-        }
-        var indx = this.clients.indexOf(conn);
-        this.clients.splice(indx, 1);
-        conn.close();
-
-    }
-
-    /**
-     * send message to all websockets in the array
-     * @param {string} message 
-     * @param {string} cameraName
-     */
-    sendToAll(message, cameraName) {
-        this.clients.forEach((client, ind, arr) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(message, (err) => {
-                    if (err) {
-                        console.error("Error sending to client "+ ind +" from camera " + cameraName +". Closing client...");
-                        // client.terminate();
-                        this.close(client);
-                        this.clientErrors++;
-                    }
-                });
-            }
-        });
-    }
-
-    /** Close all clients in the array */
-    closeAll() {
-        this.clients.forEach(function (client, ind, arr) {
-            try {
-                client.close();
-            } catch (err) {
-                console.error(err.message);
-            }
-        });
-    }
-}
-
-
-
-
-/**A class that holds CameraClient objects*/
+/**A class that holds Camera objects*/
 class CameraConnections {
     constructor() {
-        /** @property {Array} - this an array of clientcameras, no websockets connections */
-        this.cameras = [];
+        /** @property {Set<Camera>} cameras */
+        this.cameras = new Set();
     }
     /**
      * @return {number} - number of cameras in the connected
      */
     count() {
-        return this.cameras.length;
-    }
-
-    /** @return {number} - number of cameras in the connected */
-    getClientCount() {
-        var count = 0;
-        this.cameras.forEach(function (camera, inx, arr) {
-            count += camera.clients.getLength();
-        });
-        return count;
+        return this.cameras.size;
     }
 
     /**@return {array} - array of names of the cameras */
     getInfo() {
-        var cams = [];
-        this.cameras.forEach(function (element, index) {
-            var name = element.name;
-            if (element.name === undefined) {
-                name = "camera" + index;
+        var cameraArr = [];
+        var count = 0;
+        this.cameras.forEach(function (camera) {
+            var name = camera.name;
+            if (camera.name === undefined) {
+                name = "camera" + count;
+                count++;
             }
-            var infoObject = { name: name, ip: element.ip };
-            cams.push(infoObject);
+            var infoObject = { name: name, ip: camera.ip };
+            cameraArr.push(infoObject);
         }, this);
-        return cams;
+        return cameraArr;
     }
 
     /**
@@ -128,10 +47,10 @@ class CameraConnections {
 
         // defining the callbacks for this camera
         conn.on('message', (message) => {
-            camera.clients.sendToAll(message, this.name);
+            camera.sendToAllClients(message, this.name);
         });
         conn.on('close', (code, message) => {
-            camera.clients.closeAll();
+            camera.closeAllClients();
             self.removeCamera(camera);
             console.info("Camera %s closing connection: %d, %s", camera.name, code, message);
         });
@@ -142,7 +61,7 @@ class CameraConnections {
         });
 
         var camera = new Camera(conn, cname, ip);
-        this.cameras.push(camera);
+        this.cameras.add(camera);
 
         return camera;
     }
@@ -173,17 +92,17 @@ class CameraConnections {
             // new client Callbacks
             clientConn.on('message', (message) => { camera.sendMessage(message); });
             clientConn.on('close', (code) => {
-                camera.clients.close(clientConn);
                 camera.checkClients();
+                camera.closeClient(clientConn);
                 console.info("Closing client for %s camera. code: %d, %s, %s", camera.name, code);
             });
             clientConn.on('error', (err) => {
                 console.error("Error on Client connected to " + cameraName + " camera. Connection with client will be terminated. Error detail next line.");
                 console.error(err);
                 clientConn.terminate();
-                camera.clients.clientErrors++;
+                camera.clientErrors++;
             });
-            camera.clients.add(clientConn);
+            camera.addClient(clientConn);
             camera.checkClients();
 
             callback(undefined);
@@ -191,8 +110,7 @@ class CameraConnections {
     }
     /** @param {Camera} camera*/
     removeCamera(camera) {
-        var indx = this.cameras.indexOf(camera);
-        this.cameras.splice(indx, 1);
+        this.cameras.delete(camera);
     }
 
     /** @param {Camera} camera*/
@@ -207,10 +125,12 @@ class CameraConnections {
     */
     getCamera(name, callback) {
         var cameraFound;
-        this.cameras.forEach(function (c, index) {
-            if (c.name == name || name == "camera" + index) {
-                cameraFound = c;
+        var count = 0;
+        this.cameras.forEach(function (camera) {
+            if (camera.name == name || name == "camera" + count) {
+                cameraFound = camera;
             }
+            count++;
         }, this);
 
         callback(cameraFound);
@@ -232,7 +152,9 @@ class Camera {
         this.conn = conn;
         this.name = name;
         this.ip = ip;
-        this.clients = new ClientConnections();
+        this.clientErrors = 0;
+        /** @property {Set<WebSocket>} - client set*/
+        this._clients = new Set();
         /** @member {number} - estimated number of people seen by camera */
         this.peopleCount = 0;
         /** @member {Buffer} - last heatmap image from camera */
@@ -247,10 +169,28 @@ class Camera {
             });
         }
     }
+    /**@param {WebSocket} client */
+    addClient(client){
+        this._clients.add(client);
+    }
+
+    /**@param {WebSocket} client */
+    closeClient(clientToClose){
+        if(this._clients.has(clientToClose)){
+            this._clients.forEach((client) =>{
+                if(client == clientToClose){
+                    client.close();
+                    this._clients.delete(clientToClose);
+                }
+            });
+        }
+    }
 
     checkClients() {
         var conn = this.conn;
-        if (this.clients.getLength() > 0) {
+        if(conn.readyState !== WebSocket.OPEN){ return; }
+
+        if (this._clients.size > 0) {
             // request the camera to start streaming data
             this.conn.send(STREAMING_COMMAND, (err) => {
                 if (err) {
@@ -269,9 +209,33 @@ class Camera {
         }
     }
 
+     /**
+     * send message to all websockets in the array
+     * @param {string} message 
+     * @param {string} cameraName
+     */
+    sendToAllClients(message, cameraName) {
+        this._clients.forEach((client, aSet) => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(message, (err) => {
+                    if (err) {
+                        console.error("Error sending to client "+ client +" from camera " + cameraName +". Closing client...");
+                        // client.terminate();
+                        client.close();
+                        this.clientErrors++;
+                    }
+                });
+            }
+        });
+    }
+
+    /** Close all clients in the array */
+    closeAllClients() {
+        this._clients.forEach((client) => {
+            client.close();
+            // clients are being removed from the set in the closing callback
+        });
+    }
 }
 
-
-exports.ClientCamera = Camera;
-exports.ClientConnections = ClientConnections;
 exports.CameraConnections = CameraConnections;
