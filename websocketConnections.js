@@ -92,8 +92,8 @@ class CameraConnections {
             // new client Callbacks
             clientConn.on('message', (message) => { camera.sendMessage(message); });
             clientConn.on('close', (code) => {
-                camera.checkClients();
                 camera.closeClient(clientConn);
+                camera.checkClients();
                 console.info("Closing client for %s camera. code: %d, %s, %s", camera.name, code);
             });
             clientConn.on('error', (err) => {
@@ -190,6 +190,7 @@ class Camera {
         var conn = this.conn;
         if(conn.readyState !== WebSocket.OPEN){ return; }
 
+        console.info("there is %d clients in %s camera", this._clients.size, this.name);
         if (this._clients.size > 0) {
             // request the camera to start streaming data
             this.conn.send(STREAMING_COMMAND, (err) => {
