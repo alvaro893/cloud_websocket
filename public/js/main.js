@@ -6,6 +6,7 @@ $(document).ready(function(){
     var currentCam = "";
     var currentIp = "0";
     var isCameraActive = false;
+    var oldCameraList = [];
 
     // get the first camera
     refresh_list(function(){
@@ -120,16 +121,26 @@ $(document).ready(function(){
     }
 
     function refresh_list(callback){
-        $("#cameras").empty();
         $.getJSON("/cams", function(data){
             // var data = {"cams":[{"name":"RESTAURANT1","ip":"10.23.178.134"},{"name":"LOBBY2","ip":"10.23.178.135"},{"name":"LOBBY1","ip":"10.23.178.136"},{"name":"TESTING_CAMERA","ip":"10.23.178.129, 192.168.0.59"},{"name":"GARAGE1","ip":"10.23.178.138"},{"name":"RESTAURANT2","ip":"10.23.178.128"}],"count":6}
-            $.each(data.cams, function(i, camera){
-                var item = $('<li>' +camera.name+ ": "+camera.ip+" </li>");
-                item.attr({id: camera.name});
-                item.addClass('list-group-item');
-                item.on('click',function(){currentCam = camera.name; currentIp = camera.ip; setCamera();});
-                item.appendTo($("#cameras"));
+            var newCameraList = data.cams;
+            // update only whenever the list of cameras changes.
+            listEquals(oldCameraList, newCameraList, function (isEqual) {
+                if(!isEqual){
+                    // list are not exactly the same, hence update it.
+                       $("#cameras").empty();
+                        $.each(newCameraList, function(i, camera){
+                        var item = $('<li>' +camera.name+ ": "+camera.ip+" </li>");
+                        item.attr({id: camera.name});
+                        item.addClass('list-group-item');
+                        item.on('click',function(){currentCam = camera.name; currentIp = camera.ip; setCamera();});
+                        // item.appendTo($("#cameras"));
+                        prependListItem('cameras', item);
+                    });
+                    oldCameraList = newCameraList;
+                }
             });
+            
         });
         if(typeof callback === "function"){ callback();}
     }
@@ -166,4 +177,29 @@ $(document).ready(function(){
 
         });
     }
+
+    function prependListItem(listName, listItemHTML){
+        $(listItemHTML)
+            .hide()
+            // .css('opacity',0.0)
+            .prependTo('#' + listName)
+            .slideDown('slow')
+            // .animate({opacity: 1.0})
+    }
+    function listEquals(list1, list2, callback){
+        var counter = 0;
+        if (list1.length !== list2.length){
+            callback(false);
+        }else{
+            list1.forEach(el => {
+                counter++;
+                var included = list2.includes(el);
+                var result = list2.map(x => x.name).indexOf(el.name);
+                if(result == -1) {return false;}
+                if(counter === list1.length){callback(true);}
+            });
+        }
+
+    }
+
 });
