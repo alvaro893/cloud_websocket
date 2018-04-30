@@ -7,6 +7,7 @@ const STOP_STREAMING_COMMAND = "stop_frames";
 class ClientConnections{
     constructor(){
         this.clients = [];
+        this.clientErrors = 0;
     }
 
     /** Lenght of the internal array of clients */
@@ -55,6 +56,7 @@ class ClientConnections{
                         console.error("Error sending to client "+ ind +" from camera " + cameraName +". Terminating client...");
                         client.terminate();
                         this.close(client);
+                        this.clientErrors++;
                     }
                 });
             }
@@ -136,7 +138,7 @@ class CameraConnections {
         conn.on('error', (err) => {
             console.error("Error on " + name + "[" + ip + "]. Connection will be terminated. Error details next line.");
             console.error(err);
-            this.terminate();
+            conn.terminate();
         });
 
         var camera = new Camera(conn, cname, ip);
@@ -179,6 +181,7 @@ class CameraConnections {
                 console.error("Error on Client connected to " + cameraName + " camera. Connection with client will be terminated. Error detail next line.");
                 console.error(err);
                 clientConn.terminate();
+                camera.clients.clientErrors++;
             });
             camera.clients.add(clientConn);
             camera.checkClients();

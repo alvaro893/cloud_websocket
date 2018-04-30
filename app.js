@@ -78,7 +78,8 @@ app.get(lastIpPath, function(req, res){
 app.get("/statistics", function(req, res){
     camConnections.cameras.forEach((val, index) => {
         var camera = val;
-        res.write(index + "." + camera.name + " , " + camera.ip + ", clients: " + String(camera.clients.getLength()) + "\n");
+        res.write(index + "." + camera.name + " , " + camera.ip + ", clients: " + String(camera.clients.getLength()));
+        res.write(", Client errors: " + camera.clients.clientErrors + "\n");
     });
     res.status(200).end();
 });
