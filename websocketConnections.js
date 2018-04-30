@@ -45,16 +45,18 @@ class ClientConnections{
     /**
      * send message to all websockets in the array
      * @param {string} message 
+     * @param {string} cameraName
      */
-    sendToAll(message) {
+    sendToAll(message, cameraName) {
         this.clients.forEach((client, ind, arr) => {
             if (client.readyState === WebSocket.OPEN) {
                 client.send(message, (err) => {
                     if (err) {
-                        console.error("Error sending to client. Terminating client...");
-                        client.terminate(); // client will be removed on the closing callback
+                        console.error("Error sending to client "+ ind +" from camera " + cameraName +". Terminating client...");
+                        client.terminate();
+                        this.close(client);
                     }
-                })
+                });
             }
         });
     }
@@ -124,7 +126,7 @@ class CameraConnections {
 
         // defining the callbacks for this camera
         conn.on('message', (message) => {
-            camera.clients.sendToAll(message);
+            camera.clients.sendToAll(message, this.name);
         });
         conn.on('close', (code, message) => {
             camera.clients.closeAll();
