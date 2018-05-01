@@ -10,7 +10,6 @@ const http = require('http');
 
 const responsesList = [];
 var lastImpactResponse = {};
-var statistics_wss_clients = 0;
 var wss;
 
 console.log("version 1.0");
@@ -82,7 +81,7 @@ app.get("/statistics", function(req, res){
     if(wss){
         res.write("WebSocket Server clients: " + wss.clients.size + "\n");
     }
-    res.write("clients on blacklist: " + camConnections.getClientsOnBackList()+"\n");
+    // res.write("clients on blacklist: " + camConnections.getClientsOnBackList()+"\n");
     camConnections.cameras.forEach((val) => {
         var camera = val;
         res.write(count + "." + camera.name + " , " + camera.ip + ", clients: " + camera._clients.size);
