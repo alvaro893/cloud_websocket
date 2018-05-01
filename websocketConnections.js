@@ -47,7 +47,7 @@ class CameraConnections {
 
         // defining the callbacks for this camera
         conn.on('message', (message) => {
-            camera.sendToAllClients(message, this.name);
+            camera.sendToAllClients(message, name);
         });
         conn.on('close', (code, message) => {
             camera.closeAllClients();
@@ -220,9 +220,9 @@ class Camera {
             if (client.readyState === WebSocket.OPEN) {
                 client.send(message, (err) => {
                     if (err) {
-                        console.error("Error sending to client "+ client +" from camera " + cameraName +". Closing client...");
-                        // client.terminate();
-                        client.close();
+                        console.error("Error sending to client from camera " + cameraName +". Closing client...");
+                        client.terminate();
+                        // client.close();
                         this.clientErrors++;
                     }
                 });

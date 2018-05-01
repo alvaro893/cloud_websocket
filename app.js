@@ -176,9 +176,8 @@ function main(server) {
      /** websocket server extends the http server */
     wss = new WebSocket.Server({
         verifyClient: verifyClient,
-        server: server,
-        perMessageDeflate: false
-    });
+        server: server
+        });
 
     console.log("running on %s:%d", ip, port);
 
