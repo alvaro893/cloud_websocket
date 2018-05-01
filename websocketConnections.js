@@ -2,6 +2,14 @@
 var WebSocket = require('ws');
 const STREAMING_COMMAND = "send_frames";
 const STOP_STREAMING_COMMAND = "stop_frames";
+const blackList = [];
+
+// prolematic clients will be some time in the black list
+setInterval(() => {
+    if(blackList.length > 0){
+        blackList.pop();
+    }
+}, 10000);
 
 
 /**A class that holds Camera objects*/
@@ -136,6 +144,15 @@ class CameraConnections {
         callback(cameraFound);
     }
 
+    getClientsOnBackList(){
+        return blackList.length;
+    }
+
+    isOnBlackList(client){
+        // TODO check IP address with the socket remote addressu
+        //var ip = client._socket.remoteAddress;
+        return blackList.indexOf(client) != -1;
+    }
 }
 
 
@@ -217,13 +234,16 @@ class Camera {
      */
     sendToAllClients(message, cameraName) {
         this._clients.forEach((client, aSet) => {
-            if (client.readyState === WebSocket.OPEN) {
+            if (client.readyState === WebSocket.OPEN && blackList.indexOf(client) == -1) {
                 client.send(message, (err) => {
                     if (err) {
                         console.error("Error sending to client from camera " + cameraName +". Closing client...");
                         client.terminate();
-                        // client.close();
                         this.clientErrors++;
+                        if(this.clientErrors > 10){
+                            blackList.push(client);
+                            this.clientErrors = 0;
+                        }
                     }
                 });
             }
