@@ -183,12 +183,6 @@ function main(server) {
     console.log("running on %s:%d", ip, port);
 
     wss.on('connection', function connection(ws, upgradeReq) {
-        // do not accept clients on the black list
-        if(camConnections.isOnBlackList(ws)){
-            ws.terminate();
-            console.warn("rejected: client in black list");
-            return;
-        }
         var parsedUrl = url.parse(upgradeReq.url, true);
         var path = parsedUrl.pathname;
         var query = parsedUrl.query;
@@ -237,6 +231,11 @@ function authorization(req, res, next){
 function verifyClient(info) {
     var acceptHandshake = false;
     var ip = info.req.connection.remoteAddress;
+    
+    if(camConnections.isOnBlackList(ip)){
+        return false; // client must not be connected
+    }
+
     var clientUrl = url.parse(info.req.url, true);
     var query = clientUrl.query;
 

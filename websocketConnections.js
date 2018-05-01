@@ -148,10 +148,9 @@ class CameraConnections {
         return blackList.length;
     }
 
-    isOnBlackList(client){
-        // TODO check IP address with the socket remote addressu
-        //var ip = client._socket.remoteAddress;
-        return blackList.indexOf(client) != -1;
+    isOnBlackList(ip){
+        // var ip = client._socket.remoteAddress;
+        return blackList.indexOf(ip) != -1;
     }
 }
 
@@ -234,14 +233,16 @@ class Camera {
      */
     sendToAllClients(message, cameraName) {
         this._clients.forEach((client, aSet) => {
-            if (client.readyState === WebSocket.OPEN && blackList.indexOf(client) == -1) {
+            var clientIp = client._socket.remoteAddress;
+            if (client.readyState === WebSocket.OPEN && blackList.indexOf(clientIp) == -1) {
                 client.send(message, (err) => {
                     if (err) {
                         console.error("Error sending to client from camera " + cameraName +". Closing client...");
                         client.terminate();
                         this.clientErrors++;
+                        // on many errors put client ip on blacklist
                         if(this.clientErrors > 10){
-                            blackList.push(client);
+                            blackList.push(clientIp);
                             this.clientErrors = 0;
                         }
                     }
