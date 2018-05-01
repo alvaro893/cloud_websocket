@@ -7,7 +7,7 @@ const blackList = [];
 // prolematic clients will be some time in the black list
 setInterval(() => {
     if(blackList.length > 0){
-        blackList.pop();
+        blackList.shift(); // remove item as a queue
     }
 }, 10000);
 
@@ -234,10 +234,11 @@ class Camera {
     sendToAllClients(message, cameraName) {
         this._clients.forEach((client, aSet) => {
             var clientIp = client._socket.remoteAddress;
-            if (client.readyState === WebSocket.OPEN && blackList.indexOf(clientIp) == -1) {
+            if(blackList.indexOf(clientIp) == -1){
+            if (client.readyState === WebSocket.OPEN) {
                 client.send(message, (err) => {
                     if (err) {
-                        console.error("Error sending to client from camera " + cameraName +". Closing client...");
+                        // console.error("Error sending to client from camera " + cameraName +". Closing client...");
                         client.terminate();
                         this.clientErrors++;
                         // on many errors put client ip on blacklist
@@ -248,6 +249,7 @@ class Camera {
                     }
                 });
             }
+        }
         });
     }
 
