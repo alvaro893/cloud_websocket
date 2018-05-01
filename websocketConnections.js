@@ -55,7 +55,7 @@ class CameraConnections {
 
         // defining the callbacks for this camera
         conn.on('message', (message) => {
-            camera.sendToAllClients(message, name);
+            camera.sendToAllClients(message);
         });
         conn.on('close', (code, message) => {
             camera.closeAllClients();
@@ -231,27 +231,12 @@ class Camera {
      * @param {string} message 
      * @param {string} cameraName
      */
-    sendToAllClients(message, cameraName) {
-        // this._clients.forEach((client, aSet) => {
-            // var clientIp = client._socket.remoteAddress;
-            // if(blackList.indexOf(clientIp) == -1){
+    sendToAllClients(message) {
+        this._clients.forEach((client, aSet) => {
             if (client.readyState === WebSocket.OPEN) {
-                client.send();
-                // client.send(message, (err) => {
-                //     if (err) {
-                //         // console.error("Error sending to client from camera " + cameraName +". Closing client...");
-                //         client.terminate();
-                //         this.clientErrors++;
-                //         // on many errors put client ip on blacklist
-                //         if(this.clientErrors > 10){
-                //             blackList.push(clientIp);
-                //             this.clientErrors = 0;
-                //         }
-                //     }
-                // });
+                client.send(message);
             }
-        // }
-        // });
+        });
     }
 
     /** Close all clients in the array */
