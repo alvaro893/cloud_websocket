@@ -232,10 +232,6 @@ function verifyClient(info) {
     var acceptHandshake = false;
     var ip = info.req.connection.remoteAddress;
     
-    if(camConnections.isOnBlackList(ip)){
-        return false; // client must not be connected
-    }
-
     var clientUrl = url.parse(info.req.url, true);
     var query = clientUrl.query;
 

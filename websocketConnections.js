@@ -2,14 +2,14 @@
 var WebSocket = require('ws');
 const STREAMING_COMMAND = "send_frames";
 const STOP_STREAMING_COMMAND = "stop_frames";
-const blackList = [];
+// const blackList = [];
 
-// prolematic clients will be some time in the black list
-setInterval(() => {
-    if(blackList.length > 0){
-        blackList.shift(); // remove item as a queue
-    }
-}, 10000);
+// // prolematic clients will be some time in the black list
+// setInterval(() => {
+//     if(blackList.length > 0){
+//         blackList.shift(); // remove item as a queue
+//     }
+// }, 10000);
 
 
 /**A class that holds Camera objects*/
@@ -144,14 +144,14 @@ class CameraConnections {
         callback(cameraFound);
     }
 
-    getClientsOnBackList(){
-        return blackList.length;
-    }
+    // getClientsOnBackList(){
+    //     return blackList.length;
+    // }
 
-    isOnBlackList(ip){
-        // var ip = client._socket.remoteAddress;
-        return blackList.indexOf(ip) != -1;
-    }
+    // isOnBlackList(ip){
+    //     // var ip = client._socket.remoteAddress;
+    //     return blackList.indexOf(ip) != -1;
+    // }
 }
 
 
@@ -232,25 +232,26 @@ class Camera {
      * @param {string} cameraName
      */
     sendToAllClients(message, cameraName) {
-        this._clients.forEach((client, aSet) => {
-            var clientIp = client._socket.remoteAddress;
-            if(blackList.indexOf(clientIp) == -1){
+        // this._clients.forEach((client, aSet) => {
+            // var clientIp = client._socket.remoteAddress;
+            // if(blackList.indexOf(clientIp) == -1){
             if (client.readyState === WebSocket.OPEN) {
-                client.send(message, (err) => {
-                    if (err) {
-                        // console.error("Error sending to client from camera " + cameraName +". Closing client...");
-                        client.terminate();
-                        this.clientErrors++;
-                        // on many errors put client ip on blacklist
-                        if(this.clientErrors > 10){
-                            blackList.push(clientIp);
-                            this.clientErrors = 0;
-                        }
-                    }
-                });
+                client.send();
+                // client.send(message, (err) => {
+                //     if (err) {
+                //         // console.error("Error sending to client from camera " + cameraName +". Closing client...");
+                //         client.terminate();
+                //         this.clientErrors++;
+                //         // on many errors put client ip on blacklist
+                //         if(this.clientErrors > 10){
+                //             blackList.push(clientIp);
+                //             this.clientErrors = 0;
+                //         }
+                //     }
+                // });
             }
-        }
-        });
+        // }
+        // });
     }
 
     /** Close all clients in the array */
