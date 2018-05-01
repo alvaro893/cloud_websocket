@@ -179,7 +179,7 @@ class Camera {
         if(this._clients.has(clientToClose)){
             this._clients.forEach((client) =>{
                 if(client == clientToClose){
-                    client.close();
+                    client.terminate();
                     this._clients.delete(clientToClose);
                 }
             });
@@ -233,7 +233,7 @@ class Camera {
     /** Close all clients in the array */
     closeAllClients() {
         this._clients.forEach((client) => {
-            client.close();
+            client.terminate();
             // clients are being removed from the set in the closing callback
         });
     }
