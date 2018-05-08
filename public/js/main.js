@@ -69,11 +69,15 @@ $(document).ready(function(){
     });
     
     function setCamera(){
+        // select and restart all telelmetry
+        var telemetry = $('span[id^="tel_"]*');
+        for (var i = 0; i < telemetry.length; i++){ telemetry[i].innerHTML = "-"; }
+
         document.getElementById('camera_name').innerHTML = currentCam;
         document.getElementById('load').innerHTML =
         $.get("/cameras/"+currentCam+"/load", function(data){
             $('#load').html( "Average CPU Load (5 min) " + (data.split(" ")[1] / 4 * 100).toFixed(2) + " %");
-        })
+        });
         var video_feed = document.getElementById("video_feed");
         video_feed.src = "/img/wait.png";
         video_feed.addEventListener('error', function imgOnError() {
